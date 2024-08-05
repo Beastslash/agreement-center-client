@@ -23,9 +23,14 @@ export default function CallbackPage() {
 
         }
         const jsonResponse = await response.json();
-        document.cookie = `githubAccessToken=${jsonResponse.access_token}`;
-        document.cookie = `githubRefreshToken=${jsonResponse.refresh_token}`;
+        const accessTokenExpireTime = new Date();
+        accessTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + jsonResponse.expires_in);
+        const refreshTokenExpireTime = new Date();
+        refreshTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + jsonResponse.refresh_token_expires_in);
+        document.cookie = `githubAccessToken=${jsonResponse.access_token}; Expires=${accessTokenExpireTime.toUTCString()}; SameSite=Strict; Secure`;
+        document.cookie = `githubRefreshToken=${jsonResponse.refresh_token}; Expires=${refreshTokenExpireTime.toUTCString()}; SameSite=Strict; Secure`;
         setAreCookiesSet(true);
+        window.close();
         
       }
 
@@ -35,11 +40,27 @@ export default function CallbackPage() {
 
   }, [code]);
 
-  return isReady ? (
+  return (
     <main>
-      <h1>You've been authenticated</h1>
-      <p>You may now close this window.</p>
+      {
+        isReady ? (
+          areCookiesSet ? (
+            <>
+              <h1>You've been authenticated</h1>
+              <p>You may now close this window.</p>
+            </>
+          ) : (
+            <>
+              <h1>We couldn't authenticate you</h1>
+              <p>Try connecting your account again.</p>
+            </>
+          )
+        ) : (
+          <p>Authenticating...</p>
+        )
+      }
+      
     </main>
-  ) : null;
+  )
 
 }
