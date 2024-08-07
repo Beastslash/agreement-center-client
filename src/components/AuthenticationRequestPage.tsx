@@ -1,6 +1,22 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function AuthenticationRequestPage() {
+
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get("redirect");
+
+  useEffect(() => {
+
+    const broadcastChannel = new BroadcastChannel("GitHubAccessTokenChange");
+    broadcastChannel.onmessage = () => {
+
+      navigate(redirectPath ?? "/", {replace: true});
+
+    }
+
+  }, []);
 
   return (
     <main>
