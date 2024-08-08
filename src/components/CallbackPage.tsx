@@ -14,7 +14,7 @@ export default function CallbackPage() {
 
       if (code) {
 
-        const response = await fetch(`https://localhost:3001/authenticate?code=${code}`);
+        const response = await fetch(`https://localhost:3001/authentication?code=${code}`);
         if (!response.ok) {
 
           console.error(await response.json());
