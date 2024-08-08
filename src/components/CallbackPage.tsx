@@ -14,7 +14,7 @@ export default function CallbackPage() {
 
       if (code) {
 
-        const response = await fetch(`https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-0f624311-d913-4063-8a8d-060f357dc58b/authentication/getUserAccessToken?code=${code}`);
+        const response = await fetch(`https://localhost:3001/authenticate?code=${code}`);
         if (!response.ok) {
 
           console.error(await response.json());

@@ -15,10 +15,11 @@ export default function AgreementPage() {
     // Verify that the user is signed in and redirect them if they are unauthenticated.
     const value = `; ${document.cookie}`;
     const parts = value.split(`; githubAccessToken=`);
-    let githubAccessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
+    const githubAccessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
+    const agreementPath = `${projectName}/${agreementName}`;
     if (!githubAccessToken) {
 
-      navigate(`/authenticate?redirect=/${projectName}/${agreementName}`, {replace: true});
+      navigate(`/authenticate?redirect=/${agreementPath}`, {replace: true});
       return;
 
     }
@@ -26,7 +27,7 @@ export default function AgreementPage() {
     (async () => {
 
       // Get the agreement content string and parse it as Markdown.
-      const agreementContentStringResponse = await fetch(`https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-0f624311-d913-4063-8a8d-060f357dc58b/agreements/getAgreement?agreement_path=${projectName}/${agreementName}`, {
+      const agreementContentStringResponse = await fetch(`https://localhost:3001/agreements?agreement_path=${agreementPath}`, {
         headers: {
           "Content-Type": "application/json",
           "github-user-access-token": githubAccessToken
@@ -41,7 +42,6 @@ export default function AgreementPage() {
       setIsReady(true);
 
     })();
-    
 
   }, []);
 
