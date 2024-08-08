@@ -14,7 +14,7 @@ export default function CallbackPage() {
 
       if (code) {
 
-        const response = await fetch(`https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-d7becceb-1566-414d-af00-363ce509f7bb/authentication/getUserAccessToken?code=${code}`);
+        const response = await fetch(`https://localhost:3001/authentication?code=${code}`);
         if (!response.ok) {
 
           console.error(await response.json());
@@ -30,6 +30,10 @@ export default function CallbackPage() {
         document.cookie = `githubAccessToken=${jsonResponse.access_token}; Expires=${accessTokenExpireTime.toUTCString()}; SameSite=Strict; Secure`;
         document.cookie = `githubRefreshToken=${jsonResponse.refresh_token}; Expires=${refreshTokenExpireTime.toUTCString()}; SameSite=Strict; Secure`;
         setAreCookiesSet(true);
+
+        const broadcastChannel = new BroadcastChannel("GitHubAccessTokenChange");
+        broadcastChannel.postMessage(true);
+
         window.close();
         
       }
