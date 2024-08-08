@@ -1,0 +1,73 @@
+body {
+  margin: 0;
+  font-size: 14px;
+}
+
+h1, h2, h3, h4, tr, label, input, button, p, a {
+  font-family: "Onest", Arial, Helvetica, sans-serif;
+}
+
+h1, h2, h3, h4, p {
+  margin: 0;
+}
+
+p, label, td, th {
+  line-height: 1.5;
+}
+
+table {
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  padding: 0;
+}
+
+th:first-of-type, td:first-of-type {
+  padding-left: 15px;
+} 
+
+th, td {
+  padding: 15px;
+}
+
+tbody tr td {
+  border-top: 1px solid #e0e0e0;
+}
+
+h1 {
+  text-align: center;
+  padding: 90px 0 75px;
+}
+
+.input {
+  display: flex;
+  flex-direction: column;
+}
+
+.input.disabled {
+  color: #878787;
+}
+
+.input label {
+  margin-left: 5px;
+  background: white;
+  z-index: 2;
+  width: fit-content;
+  padding: 0px 5px;
+  font-weight: 500;
+}
+
+.input input {
+  border-radius: 5px;
+  border: 1px solid #c4c4c4;
+  padding: 10px 10px;
+  margin-top: -10px;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 15px; 
+}

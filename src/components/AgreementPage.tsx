@@ -47,7 +47,7 @@ export default function AgreementPage() {
         if (!match.tableRow && tableHead) {
 
           components.push(
-            <table key={`t${key}`}>
+            <table key={`t${key}`} cellPadding={0} cellSpacing={0}>
               <thead>
                 {tableHead}
               </thead>
@@ -93,7 +93,7 @@ export default function AgreementPage() {
 
           const isOwner = inputInfo.ownerID === agreementContentStringJSON.githubUserID;
           components.push(
-            <section key={key}>
+            <section key={key} className={`input${!isOwner ? " disabled" : ""}`}>
               <label>{inputInfo.label}</label>
               <input type="text" disabled={!isOwner} required={isOwner} />
             </section>
@@ -140,7 +140,7 @@ export default function AgreementPage() {
             {markdownComponent}
             <section>
               <button disabled>Accept and submit</button>
-              <button>Reject</button>
+              <button>Decline terms</button>
             </section>
           </>
         ) : (
