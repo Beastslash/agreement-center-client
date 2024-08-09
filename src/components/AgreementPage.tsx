@@ -92,10 +92,16 @@ export default function AgreementPage() {
           const inputInfo = JSON.parse(agreementContentStringJSON.inputs)[inputIndex - 1];
 
           const isOwner = inputInfo.ownerID === agreementContentStringJSON.githubUserID;
+          const date = new Date();
+          const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+          const dateString = `${months[date.getUTCMonth()]} ${date.getUTCDate() + 1}, ${date.getUTCFullYear()}`;
+          const isDate = inputInfo.type === 1;
+          const isDisabled = isDate || !isOwner;
+
           components.push(
-            <section key={key} className={`input${!isOwner ? " disabled" : ""}`}>
+            <section key={key} className={`input${isDisabled ? " disabled" : ""}`}>
               <label>{inputInfo.label}</label>
-              <input type="text" disabled={!isOwner} required={isOwner} />
+              <input type="text" disabled={isDisabled} required={isOwner} value={isDate && isOwner ? dateString : undefined} />
             </section>
           );
 
