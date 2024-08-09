@@ -8,7 +8,6 @@ export default function AgreementPage() {
 
   const [isReady, setIsReady] = useState(false);
   const navigate = useNavigate();
-
   const { projectName, agreementName } = useParams();
   const [agreementContent, setAgreementContent] = useState<{
     text: string;
@@ -27,16 +26,16 @@ export default function AgreementPage() {
   } | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [inputValues, setInputValues] = useState<any[]>([]);
-
   const [markdownComponent, setMarkdownComponent] = useState<ReactElement[] | null>(null);
+
+  const agreementPath = `${projectName}/${agreementName}`;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; githubAccessToken=`);
+  const githubAccessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
 
   useEffect(() => {
 
     // Verify that the user is signed in and redirect them if they are unauthenticated.
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; githubAccessToken=`);
-    const githubAccessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
-    const agreementPath = `${projectName}/${agreementName}`;
     if (!githubAccessToken) {
 
       navigate(`/authenticate?redirect=/${agreementPath}`, {replace: true});
@@ -126,7 +125,7 @@ export default function AgreementPage() {
         } else if (match.inputIndex) {
 
           const inputIndex = parseInt(match.inputIndex, 10);
-          const inputInfo = agreementContent.inputs[inputIndex - 1];
+          const inputInfo = agreementContent.inputs[inputIndex];
 
           const isOwner = inputInfo.ownerID === agreementContent.githubUserID;
           const isDate = inputInfo.type === 1;
@@ -200,6 +199,56 @@ export default function AgreementPage() {
 
   }, [agreementContent, inputValues]);
 
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  useEffect(() => {
+
+    if (isSubmitting && githubAccessToken) {
+
+      (async () => {
+
+        try {
+
+          const ownedPairs: any = {};
+          for (let i = 0; inputValues.length > i; i++) {
+
+            if (inputValues[i]) {
+
+              ownedPairs[i] = inputValues[i];
+
+            }
+
+          }
+
+          const response = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
+            headers: {
+              "Content-Type": "application/json",
+              "github-user-access-token": githubAccessToken
+            },
+            body: JSON.stringify(ownedPairs),
+            method: "PUT"
+          });
+
+          if (!response.ok) {
+
+            throw new Error((await response.json()).message);
+
+          }
+
+          alert("Successfully accepted and submitted contract.");
+
+        } catch (error) {
+
+          alert(error);
+
+        };
+        setIsSubmitting(false);
+
+      })();
+
+    }
+
+  }, [isSubmitting]);
+
   return (
     <main>
       {
@@ -207,8 +256,8 @@ export default function AgreementPage() {
           <>
             {markdownComponent}
             <section>
-              <button disabled={!canSubmit}>Accept and submit</button>
-              <button className="secondary">Decline terms</button>
+              <button disabled={isSubmitting || !canSubmit} onClick={() => canSubmit ? setIsSubmitting(true) : undefined}>Accept and submit</button>
+              <button className="secondary" disabled={isSubmitting}>Decline terms</button>
             </section>
           </>
         ) : (
