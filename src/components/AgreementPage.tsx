@@ -208,7 +208,7 @@ export default function AgreementPage() {
             {markdownComponent}
             <section>
               <button disabled={!canSubmit}>Accept and submit</button>
-              <button>Decline terms</button>
+              <button className="secondary">Decline terms</button>
             </section>
           </>
         ) : (
