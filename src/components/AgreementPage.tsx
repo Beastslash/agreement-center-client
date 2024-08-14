@@ -2,21 +2,40 @@ import React, { useState, useEffect, ReactElement } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Katex from "katex";
 
+enum InputType {Text, Date}
+
 export default function AgreementPage() {
 
   const [isReady, setIsReady] = useState(false);
   const navigate = useNavigate();
-
   const { projectName, agreementName } = useParams();
-  const [markdownComponent, setMarkdownComponent] = useState<ReactElement[] | null>(null); 
+  const [agreementContent, setAgreementContent] = useState<{
+    text: string;
+    permissions: {
+      viewerIDs: number[];
+      reviewerIDs: number[];
+      editorIDs: number[];
+    };
+    inputs: {
+      type: InputType;
+      label: string;
+      ownerID: number;
+      isAutofilled?: boolean;
+    }[];
+    githubUserID: number;
+  } | null>(null);
+  const [canSubmit, setCanSubmit] = useState<boolean>(false);
+  const [inputValues, setInputValues] = useState<any[]>([]);
+  const [markdownComponent, setMarkdownComponent] = useState<ReactElement[] | null>(null);
+
+  const agreementPath = `${projectName}/${agreementName}`;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; githubAccessToken=`);
+  const githubAccessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
 
   useEffect(() => {
 
     // Verify that the user is signed in and redirect them if they are unauthenticated.
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; githubAccessToken=`);
-    const githubAccessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
-    const agreementPath = `${projectName}/${agreementName}`;
     if (!githubAccessToken) {
 
       navigate(`/accounts/authenticate?redirect=/${agreementPath}`, {replace: true});
@@ -35,14 +54,31 @@ export default function AgreementPage() {
       });
 
       const agreementContentStringJSON = await agreementContentStringResponse.json();
-      const agreementContentString = agreementContentStringJSON.text;
+      setAgreementContent({
+        text: agreementContentStringJSON.text,
+        inputs: JSON.parse(agreementContentStringJSON.inputs),
+        permissions: JSON.parse(agreementContentStringJSON.permissions),
+        githubUserID: agreementContentStringJSON.githubUserID
+      });
+
+    })();
+
+  }, []);
+
+  useEffect(() => {
+
+    if (agreementContent) {
+
       const regex = /(\n|^)\$(?<math>(.+))\$|(\n|^)(?<tableRow>(\| *.+ *\|)+)|(\n|^)?<!-- *(?<inputIndex>\d+) *-->|(\n|^)#### *(?<h4>.+)|(\n|^)### *(?<h3>.+)|(\n|^)## *(?<h2>.+)|(\n|^)# *(?<h1>.+)|(\n|^)(?<p>.+)/gm;
       const components = [];
       let key = 0;
       let tableHead: ReactElement | null = null;
       let tableRows: ReactElement[] = [];
       let alignment: "left" | "right" | "center" | undefined = undefined;
-      for (const {groups: match} of [...agreementContentString.matchAll(regex)]) {
+      let canSubmit = true;
+      for (const {groups: match} of [...agreementContent.text.matchAll(regex)]) {
+
+        if (!match) continue;
 
         if (!match.tableRow && tableHead) {
 
@@ -84,31 +120,55 @@ export default function AgreementPage() {
 
         } else if (match.math) {
           
-          components.push(<section dangerouslySetInnerHTML={{__html: Katex.renderToString(match.math, {output: "mathml"}) }} />);
+          components.push(<section key={key} dangerouslySetInnerHTML={{__html: Katex.renderToString(match.math, {output: "mathml"}) }} />);
           
         } else if (match.inputIndex) {
 
           const inputIndex = parseInt(match.inputIndex, 10);
-          const inputInfo = JSON.parse(agreementContentStringJSON.inputs)[inputIndex - 1];
+          const inputInfo = agreementContent.inputs[inputIndex];
 
-          const isOwner = inputInfo.ownerID === agreementContentStringJSON.githubUserID;
-          const date = new Date();
-          const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-          const dateString = `${months[date.getUTCMonth()]} ${date.getUTCDate() + 1}, ${date.getUTCFullYear()}`;
+          const isOwner = inputInfo.ownerID === agreementContent.githubUserID;
           const isDate = inputInfo.type === 1;
+          if (isDate && !inputValues[inputIndex] && isOwner) {
+
+            const date = new Date();
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const dateString = `${months[date.getUTCMonth()]} ${date.getUTCDate() + 1}, ${date.getUTCFullYear()}`;
+            setInputValues((currentInputValues) => {
+
+              const newInputValues = [...currentInputValues];
+              newInputValues[inputIndex] = dateString;
+              return newInputValues;
+
+            });
+
+          }
+
           const isDisabled = isDate || !isOwner;
+
+          if (isOwner && !inputValues[inputIndex]) {
+
+            canSubmit = false;
+
+          }
 
           components.push(
             <section key={key} className={`input${isDisabled ? " disabled" : ""}`}>
               <label>{inputInfo.label}</label>
-              <input type="text" disabled={isDisabled} required={isOwner} value={isDate && isOwner ? dateString : undefined} />
+              <input type="text" disabled={isDisabled} required={isOwner} value={inputValues[inputIndex] ?? ""} onChange={(event) => setInputValues((currentInputValues) => {
+
+                const newInputValues = [...currentInputValues];
+                newInputValues[inputIndex] = event.target.value;
+                return newInputValues;
+
+              })} />
             </section>
           );
 
         } else if (match.tableRow) {
 
           const columnRegex = /\| (?<column>[^|]+) (\|$)?/gm;
-          const columns = [...match.tableRow.matchAll(columnRegex)].map((match, index) => React.createElement(tableHead ? "td" : "th", {key: index}, match.groups.column));
+          const columns = [...match.tableRow.matchAll(columnRegex)].map((match, index) => React.createElement(tableHead ? "td" : "th", {key: index}, match.groups?.column));
           const row = React.createElement("tr", {key, align: alignment ?? "left"}, columns);
 
           if (!tableHead) {
@@ -131,12 +191,63 @@ export default function AgreementPage() {
 
       }
 
+      setCanSubmit(canSubmit);
       setMarkdownComponent(components);
       setIsReady(true);
 
-    })();
+    }
 
-  }, []);
+  }, [agreementContent, inputValues]);
+
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  useEffect(() => {
+
+    if (isSubmitting && githubAccessToken) {
+
+      (async () => {
+
+        try {
+
+          const ownedPairs: any = {};
+          for (let i = 0; inputValues.length > i; i++) {
+
+            if (inputValues[i]) {
+
+              ownedPairs[i] = inputValues[i];
+
+            }
+
+          }
+
+          const response = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
+            headers: {
+              "Content-Type": "application/json",
+              "github-user-access-token": githubAccessToken
+            },
+            body: JSON.stringify(ownedPairs),
+            method: "PUT"
+          });
+
+          if (!response.ok) {
+
+            throw new Error((await response.json()).message);
+
+          }
+
+          alert("Successfully accepted and submitted contract.");
+
+        } catch (error) {
+
+          alert(error);
+
+        };
+        setIsSubmitting(false);
+
+      })();
+
+    }
+
+  }, [isSubmitting]);
 
   return (
     <main>
@@ -145,8 +256,8 @@ export default function AgreementPage() {
           <>
             {markdownComponent}
             <section>
-              <button disabled>Accept and submit</button>
-              <button>Decline terms</button>
+              <button disabled={isSubmitting || !canSubmit} onClick={() => canSubmit ? setIsSubmitting(true) : undefined}>Accept and submit</button>
+              <button className="secondary" disabled={isSubmitting}>Decline terms</button>
             </section>
           </>
         ) : (
