@@ -19,7 +19,7 @@ export default function AgreementPage() {
     const agreementPath = `${projectName}/${agreementName}`;
     if (!githubAccessToken) {
 
-      navigate(`/authenticate?redirect=/${agreementPath}`, {replace: true});
+      navigate(`/accounts/authenticate?redirect=/${agreementPath}`, {replace: true});
       return;
 
     }

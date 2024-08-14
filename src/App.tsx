@@ -10,8 +10,8 @@ export default function App() {
   return (
     <>
       <Routes>
-        <Route path="/authenticate" element={<AuthenticationRequestPage />} />
-        <Route path="/callback" element={<CallbackPage />} />
+        <Route path="/accounts/authenticate" element={<AuthenticationRequestPage />} />
+        <Route path="/accounts/callback" element={<CallbackPage />} />
         <Route path="/:projectName/:agreementName" element={<AgreementPage />} />
       </Routes>
     </>
