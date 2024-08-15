@@ -235,6 +235,7 @@ export default function AgreementPage() {
         }
 
         setEmailAddresses(jsonResponse);
+        setSelectedEmailAddressIndex(0);
         setIsGettingEmailAddresses(false);
 
       })();
@@ -245,7 +246,7 @@ export default function AgreementPage() {
 
   useEffect(() => {
 
-    if (githubAccessToken && selectedEmailAddressIndex) {
+    if (githubAccessToken && typeof(selectedEmailAddressIndex) === "number") {
 
       (async () => {
 
@@ -319,7 +320,7 @@ export default function AgreementPage() {
                 <p>Next, we need you to add a key to your GitHub account. This key can be used to create a signature that can ensure that you're actually the one signing this agreement. A signature also serves as a tamper prevention system, so you'll know if the agreement was changed.</p>
                 <section>
                   <label htmlFor="emailAddress">Email address</label>
-                  <select id="emailAddress" onChange={(event) => {setGPGPublicKey("");  setSelectedEmailAddressIndex(parseInt(event.target.value, 10))}} value={`${selectedEmailAddressIndex}`}>
+                  <select id="emailAddress" onChange={(event) => {setGPGPublicKey(""); setSelectedEmailAddressIndex(parseInt(event.target.value, 10))}} value={`${selectedEmailAddressIndex}`}>
                     {emailAddresses.map((emailAddress, index) => <option value={index}>{emailAddress.email}</option>)}
                   </select>
                 </section>
@@ -327,8 +328,8 @@ export default function AgreementPage() {
                   Public key
                 </Input>
                 <section>
-                  <button type="submit" disabled>Sign and submit agreement</button>
-                  <button type="button" className="secondary" onClick={() => window.open("https://github.com/settings/gpg/new", "_blank")}>Add to GitHub GPG key list</button>
+                  <button type="submit" disabled={!gpgPublicKey || isSubmitting || !canSubmit}>Sign and submit agreement</button>
+                  <button type="button" className="secondary" onClick={() => window.open("https://github.com/settings/gpg/new", "_blank")} disabled={!gpgPublicKey}>Add to GitHub GPG key list</button>
                 </section>
               </section>
             </form>
