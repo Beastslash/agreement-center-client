@@ -246,22 +246,11 @@ export default function AgreementPage() {
 
   useEffect(() => {
 
-    if (githubAccessToken && typeof(selectedEmailAddressIndex) === "number") {
+    if (typeof(selectedEmailAddressIndex) === "number") {
 
       (async () => {
 
         try {
-
-          // const ownedPairs: any = {};
-          // for (let i = 0; inputValues.length > i; i++) {
-
-          //   if (inputValues[i]) {
-
-          //     ownedPairs[i] = inputValues[i];
-
-          //   }
-
-          // }
 
           const { privateKey, publicKey } = await generateGPGKeyPair({
             type: "rsa",
@@ -273,23 +262,6 @@ export default function AgreementPage() {
           });
           setGPGPublicKey(publicKey);
           setGPGPrivateKey(privateKey);
-
-          // const response = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
-          //   headers: {
-          //     "Content-Type": "application/json",
-          //     "github-user-access-token": githubAccessToken
-          //   },
-          //   body: JSON.stringify(ownedPairs),
-          //   method: "PUT"
-          // });
-
-          // if (!response.ok) {
-
-          //   throw new Error((await response.json()).message);
-
-          // }
-
-          // alert("Successfully accepted and submitted contract.");
 
         } catch (error) {
 
@@ -304,6 +276,43 @@ export default function AgreementPage() {
 
   }, [selectedEmailAddressIndex]);
 
+  useEffect(() => {
+
+    if (isSubmitting && githubAccessToken) {
+
+      (async () => {
+
+        const ownedPairs: any = {};
+        for (let i = 0; inputValues.length > i; i++) {
+
+          if (inputValues[i]) {
+
+            ownedPairs[i] = inputValues[i];
+
+          }
+
+        }
+
+        const response = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
+          headers: {
+            "Content-Type": "application/json",
+            "github-user-access-token": githubAccessToken
+          },
+          body: JSON.stringify(ownedPairs),
+          method: "PUT"
+        });
+
+        if (!response.ok) throw new Error((await response.json()).message);
+
+        alert("Successfully accepted and submitted contract.");
+
+        setIsSubmitting(false);
+
+      })();
+
+    }
+
+  }, [isSubmitting]);
 
   return (
     <main>
