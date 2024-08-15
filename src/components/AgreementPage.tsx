@@ -1,6 +1,8 @@
 import React, { useState, useEffect, ReactElement } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Katex from "katex";
+import Input from "./Input";
+import { generateKey as generateGPGKeyPair, readPrivateKey } from "openpgp";
 
 enum InputType {Text, Date}
 
@@ -153,16 +155,15 @@ export default function AgreementPage() {
           }
 
           components.push(
-            <section key={key} className={`input${isDisabled ? " disabled" : ""}`}>
-              <label>{inputInfo.label}</label>
-              <input type="text" disabled={isDisabled} required={isOwner} value={inputValues[inputIndex] ?? ""} onChange={(event) => setInputValues((currentInputValues) => {
+            <Input key={key} className={`input${isDisabled ? " disabled" : ""}`} type="text" disabled={isDisabled} required={isOwner} value={inputValues[inputIndex] ?? ""} onChange={(event) => setInputValues((currentInputValues) => {
 
-                const newInputValues = [...currentInputValues];
-                newInputValues[inputIndex] = event.target.value;
-                return newInputValues;
+              const newInputValues = [...currentInputValues];
+              newInputValues[inputIndex] = event.target.value;
+              return newInputValues;
 
-              })} />
-            </section>
+            })}>
+              {inputInfo.label}
+            </Input>
           );
 
         } else if (match.tableRow) {
@@ -200,41 +201,94 @@ export default function AgreementPage() {
   }, [agreementContent, inputValues]);
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isGettingEmailAddresses, setIsGettingEmailAddresses] = useState<boolean>(false);
+  const [emailAddresses, setEmailAddresses] = useState<{email: string; verified: boolean; primary: boolean; visibility: "public" | "private"}[]>([]);
+  const [selectedEmailAddressIndex, setSelectedEmailAddressIndex] = useState<number | null>(null);
+  const [gpgPublicKey, setGPGPublicKey] = useState<string>("");
+  const [gpgPrivateKey, setGPGPrivateKey] = useState<string>("");
   useEffect(() => {
 
-    if (isSubmitting && githubAccessToken) {
+    if (isGettingEmailAddresses) {
+
+      (async () => {
+
+        if (!githubAccessToken) {
+
+          navigate(`/accounts/authenticate?redirect=/${agreementPath}`, {replace: true});
+          return;
+
+        }
+
+        const response = await fetch(`https://localhost:3001/authentication/email-addresses`, {
+          headers: {
+            "Content-Type": "application/json",
+            "github-user-access-token": githubAccessToken
+          }
+        });
+
+        const jsonResponse = await response.json();
+
+        if (!response.ok) {
+
+          throw new Error(jsonResponse.message);
+
+        }
+
+        setEmailAddresses(jsonResponse);
+        setIsGettingEmailAddresses(false);
+
+      })();
+
+    }
+
+  }, [isGettingEmailAddresses]);
+
+  useEffect(() => {
+
+    if (githubAccessToken && selectedEmailAddressIndex) {
 
       (async () => {
 
         try {
 
-          const ownedPairs: any = {};
-          for (let i = 0; inputValues.length > i; i++) {
+          // const ownedPairs: any = {};
+          // for (let i = 0; inputValues.length > i; i++) {
 
-            if (inputValues[i]) {
+          //   if (inputValues[i]) {
 
-              ownedPairs[i] = inputValues[i];
+          //     ownedPairs[i] = inputValues[i];
 
-            }
+          //   }
 
-          }
+          // }
 
-          const response = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
-            headers: {
-              "Content-Type": "application/json",
-              "github-user-access-token": githubAccessToken
-            },
-            body: JSON.stringify(ownedPairs),
-            method: "PUT"
+          const { privateKey, publicKey } = await generateGPGKeyPair({
+            type: "rsa",
+            userIDs: [{
+              name: "Christian Toney",
+              email: emailAddresses[selectedEmailAddressIndex].email
+            }],
+            passphrase: "heheheha"
           });
+          setGPGPublicKey(publicKey);
+          setGPGPrivateKey(privateKey);
 
-          if (!response.ok) {
+          // const response = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
+          //   headers: {
+          //     "Content-Type": "application/json",
+          //     "github-user-access-token": githubAccessToken
+          //   },
+          //   body: JSON.stringify(ownedPairs),
+          //   method: "PUT"
+          // });
 
-            throw new Error((await response.json()).message);
+          // if (!response.ok) {
 
-          }
+          //   throw new Error((await response.json()).message);
 
-          alert("Successfully accepted and submitted contract.");
+          // }
+
+          // alert("Successfully accepted and submitted contract.");
 
         } catch (error) {
 
@@ -247,7 +301,8 @@ export default function AgreementPage() {
 
     }
 
-  }, [isSubmitting]);
+  }, [selectedEmailAddressIndex]);
+
 
   return (
     <main>
@@ -256,9 +311,27 @@ export default function AgreementPage() {
           <>
             {markdownComponent}
             <section>
-              <button disabled={isSubmitting || !canSubmit} onClick={() => canSubmit ? setIsSubmitting(true) : undefined}>Accept and submit</button>
+              <button disabled={isSubmitting || !canSubmit} onClick={() => canSubmit ? setIsGettingEmailAddresses(true) : undefined}>Next: Sign agreement</button>
               <button className="secondary" disabled={isSubmitting}>Decline terms</button>
             </section>
+            <form>
+              <section>
+                <p>Next, we need you to add a key to your GitHub account. This key can be used to create a signature that can ensure that you're actually the one signing this agreement. A signature also serves as a tamper prevention system, so you'll know if the agreement was changed.</p>
+                <section>
+                  <label htmlFor="emailAddress">Email address</label>
+                  <select id="emailAddress" onChange={(event) => {setGPGPublicKey("");  setSelectedEmailAddressIndex(parseInt(event.target.value, 10))}} value={`${selectedEmailAddressIndex}`}>
+                    {emailAddresses.map((emailAddress, index) => <option value={index}>{emailAddress.email}</option>)}
+                  </select>
+                </section>
+                <Input type="textarea" value={gpgPublicKey} helperText={`Copy this and add it to your GPG key list. You can title the key anything you want, but we recommend setting it to something like "Agreement Center" for good organization.`} disabled style={{resize: "none", height: "200px"}}>
+                  Public key
+                </Input>
+                <section>
+                  <button type="submit" disabled>Sign and submit agreement</button>
+                  <button type="button" className="secondary" onClick={() => window.open("https://github.com/settings/gpg/new", "_blank")}>Add to GitHub GPG key list</button>
+                </section>
+              </section>
+            </form>
           </>
         ) : (
           <p>Getting agreement...</p>

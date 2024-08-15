@@ -42,9 +42,8 @@ h1 {
   padding: 90px 0 75px;
 }
 
-.input {
+.input > section {
   display: flex;
-  flex-direction: column;
 }
 
 .input.disabled {
@@ -52,19 +51,67 @@ h1 {
 }
 
 .input label {
-  margin-left: 5px;
-  background: white;
   z-index: 2;
   width: fit-content;
-  padding: 0px 5px;
   font-weight: 500;
+  position: relative;
+  bottom: 10px;
+  padding: 0 5px;
 }
 
-.input input {
-  border-radius: 5px;
-  border: 1px solid #c4c4c4;
-  padding: 10px 10px;
-  margin-top: -10px;
+.helperText {
+  font-size: 12px;
+}
+
+.input {
+  position: relative;
+  padding-top: 5px;
+}
+
+.input > section {
+  position: relative;
+}
+
+.input > section > section {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+.input > section > section > span {
+  width: 10px;
+  border-block-start: 1px solid;
+  border-block-end: 1px solid;
+}
+
+.input > section > section > span:nth-of-type(1) {
+  border-start-start-radius: 5px;
+  border-end-start-radius: 5px;
+  border-inline-start: 1px solid;
+}
+
+.input > section > section > span:nth-of-type(2) {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  border-block-start: none;
+}
+
+.input > section > section > span:nth-of-type(3) {
+  flex-grow: 1;
+  border-start-end-radius: 5px;
+  border-end-end-radius: 5px;
+  border-inline-end: 1px solid;
+}
+
+.input input, .input textarea {
+  border: none;
+  padding: 0 15px;
+  width: 100%;
+  margin: 12px 0;
+  background: none;
+  z-index: 1;
 }
 
 main {
@@ -76,7 +123,7 @@ main {
   padding: 0 15px; 
 }
 
-button {
+button, input[type="submit"], input[type="button"] {
   background-color: #4b53ca;
   padding: 8px 15px;
   border-radius: 5px;
@@ -86,7 +133,11 @@ button {
   cursor: pointer;
 }
 
-button[disabled] {
+input[type="text"][disabled], textarea[disabled] {
+  cursor: text;
+}
+
+button[disabled], input[type="submit"][disabled], input[type="button"][disabled] {
   filter: grayscale(1) opacity(0.6);
 }
 

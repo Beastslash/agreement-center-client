@@ -27,8 +27,8 @@ export default function CallbackPage() {
         accessTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + jsonResponse.expires_in);
         const refreshTokenExpireTime = new Date();
         refreshTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + jsonResponse.refresh_token_expires_in);
-        document.cookie = `githubAccessToken=${jsonResponse.access_token}; Expires=${accessTokenExpireTime.toUTCString()}; SameSite=Strict; Secure`;
-        document.cookie = `githubRefreshToken=${jsonResponse.refresh_token}; Expires=${refreshTokenExpireTime.toUTCString()}; SameSite=Strict; Secure`;
+        document.cookie = `githubAccessToken=${jsonResponse.access_token}; Expires=${accessTokenExpireTime.toUTCString()}; SameSite=Strict; Secure; Path=/`;
+        document.cookie = `githubRefreshToken=${jsonResponse.refresh_token}; Expires=${refreshTokenExpireTime.toUTCString()}; SameSite=Strict; Secure; Path=/`;
         setAreCookiesSet(true);
 
         const broadcastChannel = new BroadcastChannel("GitHubAccessTokenChange");
