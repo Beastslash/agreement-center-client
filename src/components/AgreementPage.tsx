@@ -2,7 +2,7 @@ import React, { useState, useEffect, ReactElement } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Katex from "katex";
 import Input from "./Input";
-import { generateKey as generateGPGKeyPair, readPrivateKey } from "openpgp";
+import { generateKey as generateGPGKeyPair, readPrivateKey, decryptKey as decryptGPGKey, sign as signMessage, createMessage as createUnencryptedMessage, readSignature } from "openpgp";
 
 enum InputType {Text, Date}
 
@@ -235,7 +235,7 @@ export default function AgreementPage() {
         }
 
         setEmailAddresses(jsonResponse);
-        setSelectedEmailAddressIndex(0);
+        setSelectedEmailAddressIndex(jsonResponse.findIndex((emailData: any) => emailData.primary));
         setIsGettingEmailAddresses(false);
 
       })();
@@ -278,33 +278,66 @@ export default function AgreementPage() {
 
   useEffect(() => {
 
-    if (isSubmitting && githubAccessToken) {
+    if (isSubmitting && githubAccessToken && selectedEmailAddressIndex) {
 
       (async () => {
 
-        const ownedPairs: any = {};
-        for (let i = 0; inputValues.length > i; i++) {
+        try {
 
-          if (inputValues[i]) {
+          const ownedPairs: any = {};
+          for (let i = 0; inputValues.length > i; i++) {
 
-            ownedPairs[i] = inputValues[i];
+            if (inputValues[i]) {
+
+              ownedPairs[i] = inputValues[i];
+
+            }
 
           }
 
+          const unsignedCommitResponse = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
+            headers: {
+              "Content-Type": "application/json",
+              "github-user-access-token": githubAccessToken
+            },
+            body: JSON.stringify(ownedPairs),
+            method: "PUT"
+          });
+
+          const body = await unsignedCommitResponse.json();
+
+          if (!unsignedCommitResponse.ok) throw new Error(body.message);
+
+          const decryptedPrivateKey = await decryptGPGKey({
+            privateKey: await readPrivateKey({armoredKey: gpgPrivateKey}),
+            passphrase: process.env.GPG_PASSPHRASE
+          });
+      
+          const armoredSignature = await signMessage({
+            message: await createUnencryptedMessage({text: body.commitMessage as string}),
+            signingKeys: decryptedPrivateKey,
+            detached: true
+          }) as string;
+
+          const signedCommitResponse = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}&code=${body.code}`, {
+            headers: {
+              "Content-Type": "application/json",
+              "github-user-access-token": githubAccessToken,
+              "armored-signature": armoredSignature,
+              "email-address": emailAddresses[selectedEmailAddressIndex].email
+            },
+            body: JSON.stringify(ownedPairs),
+            method: "PUT"
+          });
+
+          alert("Successfully accepted and submitted contract.");
+
+        } catch (error) {
+
+          console.error(error);
+          alert(error);
+
         }
-
-        const response = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
-          headers: {
-            "Content-Type": "application/json",
-            "github-user-access-token": githubAccessToken
-          },
-          body: JSON.stringify(ownedPairs),
-          method: "PUT"
-        });
-
-        if (!response.ok) throw new Error((await response.json()).message);
-
-        alert("Successfully accepted and submitted contract.");
 
         setIsSubmitting(false);
 
@@ -312,7 +345,7 @@ export default function AgreementPage() {
 
     }
 
-  }, [isSubmitting]);
+  }, [isSubmitting, selectedEmailAddressIndex]);
 
   return (
     <main>
@@ -321,27 +354,42 @@ export default function AgreementPage() {
           <>
             {markdownComponent}
             <section>
-              <button disabled={isSubmitting || !canSubmit} onClick={() => canSubmit ? setIsGettingEmailAddresses(true) : undefined}>Next: Sign agreement</button>
+              <button disabled={isSubmitting || !canSubmit} onClick={() => canSubmit ? setIsGettingEmailAddresses(true) : undefined}>I have read, understand, and agree to this agreement</button>
               <button className="secondary" disabled={isSubmitting}>Decline terms</button>
             </section>
-            <form>
+            <form onSubmit={(event) => {
+              event.preventDefault();
+              setIsSubmitting(true);
+            }}>
               <section>
-                <p>Next, we need you to add a key to your GitHub account. This key can be used to create a signature that can ensure that you're actually the one signing this agreement. A signature also serves as a tamper prevention system, so you'll know if the agreement was changed.</p>
+                <p>We've pulled your email addresses from GitHub. Please select one for us to authenticate you and send a copy of this agreement to you.</p>
                 <section>
                   <label htmlFor="emailAddress">Email address</label>
                   <select id="emailAddress" onChange={(event) => {setGPGPublicKey(""); setSelectedEmailAddressIndex(parseInt(event.target.value, 10))}} value={`${selectedEmailAddressIndex}`}>
                     {emailAddresses.map((emailAddress, index) => <option value={index}>{emailAddress.email}</option>)}
                   </select>
                 </section>
-                <Input type="textarea" value={gpgPublicKey} helperText={`Copy this and add it to your GPG key list. You can title the key anything you want, but we recommend setting it to something like "Agreement Center" for good organization.`} disabled style={{resize: "none", height: "200px"}}>
-                  Public key
-                </Input>
-                <section>
-                  <button type="submit" disabled={!gpgPublicKey || isSubmitting || !canSubmit}>Sign and submit agreement</button>
-                  <button type="button" className="secondary" onClick={() => window.open("https://github.com/settings/gpg/new", "_blank")} disabled={!gpgPublicKey}>Add to GitHub GPG key list</button>
-                </section>
+                <h2>Privacy disclosure</h2>
+                <p>After you sign and submit this agreement, we will attach some of your account, network, and device information to your submission, including:</p>
+                <ul>
+                  <li>your IP address,</li>
+                  <li>your Internet service provider information,</li>
+                  <li>your user agent and browser information,</li>
+                  <li>your GitHub user ID,</li>
+                  <li>the ID of the user access token used to sign this agreement,</li>
+                  <li>the timestamp of your authorization for Agreement Center to use your GitHub account,</li>
+                  <li>the timestamp of you opening this agreement,</li>
+                  <li>the timestamp of you signing this agreement,</li>
+                  <li>and your email address.</li>
+                </ul>
+                <p>This information will be encrypted and only used for security and authentication purposes. Agreements, along with this information, are stored at Beastslash's discretion.</p>
+                <button type="submit" disabled={!gpgPublicKey || isSubmitting || !canSubmit}>Sign and submit</button>
               </section>
             </form>
+            <section>
+              <h1>You're all set</h1>
+              <p>You've signed the <b>Everyone Destroys the World constractor agreement</b>. We've sent a copy of the agreement to your email address, but you can also access the agreement here on the Agreement Center while you still have access to the app.</p>
+            </section>
           </>
         ) : (
           <p>Getting agreement...</p>
