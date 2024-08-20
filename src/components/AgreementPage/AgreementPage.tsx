@@ -1,8 +1,10 @@
 import React, { useState, useEffect, ReactElement } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Katex from "katex";
-import Input from "./Input";
-import { generateKey as generateGPGKeyPair, readPrivateKey, decryptKey as decryptGPGKey, sign as signMessage, createMessage as createUnencryptedMessage, readSignature } from "openpgp";
+import Input from "../Input/Input";
+import styles from "./AgreementPage.module.css"
+import ProgressHeader from "../ProgressHeader/ProgressHeader";
+import AuthenticationSection from "../AuthenticationPage/AuthenticationPage";
 
 enum InputType {Text, Date}
 
@@ -353,29 +355,12 @@ export default function AgreementPage() {
   }, [isSendingCode, selectedEmailAddressIndex, emailAddresses, verificationCode]);
 
   return (
-    <main>
+    <main id={styles.page}>
       {
         isReady ? (
           <>
-            <form>
-              <p>We've pulled your email addresses from GitHub. Please select one for us authenticate you by sending you a code.</p>
-                <section>
-                  <label htmlFor="emailAddress">Email address</label>
-                  <select id="emailAddress" onChange={(event) => setSelectedEmailAddressIndex(parseInt(event.target.value, 10))} value={`${selectedEmailAddressIndex}`}>
-                    {emailAddresses.map((emailAddress, index) => <option value={index}>{emailAddress.email}</option>)}
-                  </select>
-                </section>
-              <button disabled={isSendingCode || isVerifyingCode} onClick={() => setIsSendingCode(true)}>Send code</button>
-              <p>Please enter the code that we sent to <b>{emailAddresses[selectedEmailAddressIndex].email}</b>. If you don't see an email from agreements@beastslash.com in your inbox, check your spam and trash. If you still don't see it, feel free to send another code.</p>
-              <Input type="text" disabled={isVerifyingCode} value={verificationCode} onChange={(event) => setVerificationCode(event.target.value)}>
-                Verification code
-              </Input>
-              <section>
-                <button disabled={isVerifyingCode || !verificationCode} onClick={() => setIsVerifyingCode(true)}>Confirm code</button>
-                <button className="secondary">Send another code or change email address</button>
-              </section>
-            </form>
-            {markdownComponent}
+            <AuthenticationSection />
+            {/* {markdownComponent}
             <section>
               <button disabled={isSubmitting || !canSubmit} onClick={() => canSubmit ? setIsGettingEmailAddresses(true) : undefined}>I have read, understand, and agree to this agreement</button>
               <button className="secondary" disabled={isSubmitting}>Decline terms</button>
@@ -405,7 +390,7 @@ export default function AgreementPage() {
             <section>
               <h1>You're all set</h1>
               <p>You've signed the <b>Everyone Destroys the World constractor agreement</b>. We've sent a copy of the agreement to your email address, but you can also access the agreement here on the Agreement Center while you still have access to the app.</p>
-            </section>
+            </section> */}
           </>
         ) : (
           <p>Getting agreement...</p>

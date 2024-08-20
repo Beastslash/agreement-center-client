@@ -1,0 +1,92 @@
+.input > section {
+  display: flex;
+}
+
+.input.disabled {
+  color: #878787;
+}
+
+.input label {
+  z-index: 2;
+  width: fit-content;
+  font-weight: 500;
+  position: relative;
+  bottom: 10px;
+  padding: 0 5px;
+}
+
+.input {
+  position: relative;
+  padding-top: 5px;
+}
+
+.input > section {
+  position: relative;
+}
+
+.input > section > section {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+.leftBorder, .labelContainer, .rightBorder {
+  width: 10px;
+  border-block-start: 1px solid var(--color-border-input);
+  border-block-end: 1px solid var(--color-border-input);
+  transition: 0.15s;
+}
+
+.focused .labelContainer, .focused .leftBorder, .focused .rightBorder {
+  border-block-start: 2px solid var(--color-link);
+  border-block-end: 2px solid var(--color-link);
+}
+
+.focused .leftBorder {
+  border-inline-start: 2px solid var(--color-link);
+}
+
+.focused .rightBorder {
+  border-inline-end: 2px solid var(--color-link);
+}
+
+.leftBorder {
+  border-start-start-radius: 5px;
+  border-end-start-radius: 5px;
+  border-inline-start: 1px solid var(--color-border-input);
+}
+
+.labelContainer {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  border-block-start: none;
+}
+
+.focused .labelContainer {
+  border-block-start: none;
+  color: var(--color-link);
+}
+
+.rightBorder {
+  flex-grow: 1;
+  border-start-end-radius: 5px;
+  border-end-end-radius: 5px;
+  border-inline-end: 1px solid var(--color-border-input);
+}
+
+.input input, .input textarea {
+  border: none;
+  padding: 0 15px;
+  width: 100%;
+  margin: 12px 0;
+  background: none;
+  z-index: 1;
+  outline: none;
+}
+
+.helperText {
+  font-size: 12px;
+  color: gray;
+}
