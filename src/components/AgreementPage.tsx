@@ -172,8 +172,6 @@ export default function AgreementPage() {
   const [isGettingEmailAddresses, setIsGettingEmailAddresses] = useState<boolean>(false);
   const [emailAddresses, setEmailAddresses] = useState<{email: string; verified: boolean; primary: boolean; visibility: "public" | "private"}[]>([]);
   const [selectedEmailAddressIndex, setSelectedEmailAddressIndex] = useState<number>(0);
-  const [gpgPublicKey, setGPGPublicKey] = useState<string>("");
-  const [gpgPrivateKey, setGPGPrivateKey] = useState<string>("");
   useEffect(() => {
 
     if (!githubAccessToken) {
@@ -241,35 +239,10 @@ export default function AgreementPage() {
 
           }
 
-          const unsignedCommitResponse = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
-            headers: {
-              "Content-Type": "application/json",
-              "github-user-access-token": githubAccessToken
-            },
-            body: JSON.stringify(ownedPairs),
-            method: "PUT"
-          });
-
-          const body = await unsignedCommitResponse.json();
-
-          if (!unsignedCommitResponse.ok) throw new Error(body.message);
-
-          const decryptedPrivateKey = await decryptGPGKey({
-            privateKey: await readPrivateKey({armoredKey: gpgPrivateKey}),
-            passphrase: process.env.GPG_PASSPHRASE
-          });
-      
-          const armoredSignature = await signMessage({
-            message: await createUnencryptedMessage({text: body.commitMessage as string}),
-            signingKeys: decryptedPrivateKey,
-            detached: true
-          }) as string;
-
-          const signedCommitResponse = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}&code=${body.code}`, {
+          const signedCommitResponse = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
             headers: {
               "Content-Type": "application/json",
               "github-user-access-token": githubAccessToken,
-              "armored-signature": armoredSignature,
               "email-address": emailAddresses[selectedEmailAddressIndex].email
             },
             body: JSON.stringify(ownedPairs),
