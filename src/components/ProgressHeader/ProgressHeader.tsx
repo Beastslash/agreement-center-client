@@ -15,7 +15,7 @@ export default function ProgressHeader() {
 
     const { pathname } = location;
     console.log(pathname)
-    if (/^\/authentication$/g.test(pathname)) {
+    if (/^\/authenticate$/g.test(pathname)) {
 
       setCurrentStep(0);
 

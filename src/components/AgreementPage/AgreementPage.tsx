@@ -224,7 +224,7 @@ export default function AgreementPage() {
     // Verify that the user is signed in and redirect them if they are unauthenticated.
     if (!accessToken) {
 
-      navigate(`/accounts/authenticate?redirect=/${agreementPath}`, {replace: true});
+      navigate(`/accounts/authenticate?redirect-path=/agreements/${agreementPath}`, {replace: true});
       return;
 
     }
@@ -244,7 +244,21 @@ export default function AgreementPage() {
 
           const agreementContentStringJSON = await agreementContentStringResponse.json();
           
-          if (!agreementContentStringResponse.ok) throw new Error(agreementContentStringJSON.message);
+          if (!agreementContentStringResponse.ok) {
+           
+            if (agreementContentStringResponse.status === 404) {
+
+              navigate("/agreements", {replace: true});
+
+            } else if (agreementContentStringResponse.status === 401) {
+
+              navigate(`/authenticate?redirect-path=/agreements/${agreementPath}`)
+              
+            }
+
+            throw new Error(agreementContentStringJSON.message)
+            
+          };
           
           setAgreementContent({
             text: agreementContentStringJSON.text,
