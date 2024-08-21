@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Input from "../Input/Input";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function AuthenticationSection() {
 
@@ -23,13 +24,29 @@ export default function AuthenticationSection() {
 
   }, [shouldSendCode]);
 
+  const [searchParams] = useSearchParams();
+  const redirectPath = searchParams.get("redirect-path") ?? "/agreements";
+  const navigate = useNavigate();
+
   useEffect(() => {
 
     (async () => {
 
       if (isVerifying) {
 
-        
+        const accessTokenExpireTime = new Date();
+        accessTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + 60000);
+        // accessTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + jsonResponse.expires_in);
+        const refreshTokenExpireTime = new Date();
+        refreshTokenExpireTime.setSeconds(refreshTokenExpireTime.getSeconds() + 600000);
+        // refreshTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + jsonResponse.refresh_token_expires_in);
+        document.cookie = `accessToken=${"test"}; Expires=${accessTokenExpireTime.toUTCString()}; SameSite=Strict; Secure; Path=/`;
+        document.cookie = `refreshToken=${"test"}; Expires=${refreshTokenExpireTime.toUTCString()}; SameSite=Strict; Secure; Path=/`;
+
+        const broadcastChannel = new BroadcastChannel("AccessTokenChange");
+        broadcastChannel.postMessage(true);
+
+        navigate(redirectPath, {replace: true});
 
       }
 
@@ -41,6 +58,7 @@ export default function AuthenticationSection() {
     <main>
       <form onSubmit={(event) => {
         event.preventDefault();
+        setIsVerifying(true);
       }}>
         <p>Please enter an authorized email address. After we authenticate you, you can see the agreements that you have signed, along with any outstanding requests for your signature.</p>
         <Input type="email" required value={emailAddress} onChange={({target: {value}}) => setEmailAddress(value)} onKeyDown={(event) => {

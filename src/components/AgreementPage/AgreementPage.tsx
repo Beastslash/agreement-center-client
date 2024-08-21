@@ -3,8 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import Katex from "katex";
 import Input from "../Input/Input";
 import styles from "./AgreementPage.module.css"
-import ProgressHeader from "../ProgressHeader/ProgressHeader";
-import AuthenticationSection from "../AuthenticationPage/AuthenticationPage";
 
 enum InputType {Text, Date}
 
@@ -34,8 +32,8 @@ export default function AgreementPage() {
 
   const agreementPath = `${projectName}/${agreementName}`;
   const value = `; ${document.cookie}`;
-  const parts = value.split(`; githubAccessToken=`);
-  const githubAccessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
+  const parts = value.split(`; accessToken=`);
+  const accessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
 
   useEffect(() => {
 
@@ -170,61 +168,13 @@ export default function AgreementPage() {
 
   }, [agreementContent, inputValues]);
 
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isGettingEmailAddresses, setIsGettingEmailAddresses] = useState<boolean>(false);
-  const [emailAddresses, setEmailAddresses] = useState<{email: string; verified: boolean; primary: boolean; visibility: "public" | "private"}[]>([]);
-  const [selectedEmailAddressIndex, setSelectedEmailAddressIndex] = useState<number>(0);
-  useEffect(() => {
-
-    if (!githubAccessToken) {
-
-      navigate(`/accounts/authenticate?redirect=/${agreementPath}`, {replace: true});
-      return;
-
-    }
-
-    const abortController = new AbortController();
-
-    (async () => {
-
-      try {
-
-        const response = await fetch(`https://localhost:3001/authentication/email-addresses`, {
-          signal: abortController.signal,
-          headers: {
-            "Content-Type": "application/json",
-            "github-user-access-token": githubAccessToken
-          }
-        });
-
-        const jsonResponse = await response.json();
-
-        if (!response.ok) {
-
-          throw new Error(jsonResponse.message);
-
-        }
-
-        setIsReady(true);
-        setEmailAddresses(jsonResponse);
-        setSelectedEmailAddressIndex(jsonResponse.findIndex((emailData: any) => emailData.primary));
-        setIsGettingEmailAddresses(false);
-
-      } catch (error) {
-
-        if (!(error instanceof Error) || error.name !== "AbortError") console.error(error);
-
-      } 
-
-    })();
-
-    return () => abortController.abort();
-
-  }, []);
+  const [isSigned, setIsSigned] = useState<boolean>(false);
 
   useEffect(() => {
 
-    if (isSubmitting && githubAccessToken) {
+    if (isSubmitting && accessToken) {
 
       (async () => {
 
@@ -244,8 +194,7 @@ export default function AgreementPage() {
           const signedCommitResponse = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
             headers: {
               "Content-Type": "application/json",
-              "github-user-access-token": githubAccessToken,
-              "email-address": emailAddresses[selectedEmailAddressIndex].email
+              "access-token": accessToken
             },
             body: JSON.stringify(ownedPairs),
             method: "PUT"
@@ -266,35 +215,37 @@ export default function AgreementPage() {
 
     }
 
-  }, [isSubmitting, selectedEmailAddressIndex]);
+  }, [isSubmitting]);
 
-  const [verificationCode, setVerificationCode] = useState<string>("");
-  const [isVerifyingCode, setIsVerifyingCode] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
 
     // Verify that the user is signed in and redirect them if they are unauthenticated.
-    if (!githubAccessToken) {
+    if (!accessToken) {
 
       navigate(`/accounts/authenticate?redirect=/${agreementPath}`, {replace: true});
       return;
 
     }
 
-    if (isVerifyingCode && selectedEmailAddressIndex) {
+    if (!agreementContent) {
 
       (async () => {
 
         try {
 
-          // Get the agreement content string and parse it as Markdown.
-          const agreementContentStringResponse = await fetch(`https://localhost:3001/agreements?agreement_path=${agreementPath}&email_address=${emailAddresses[selectedEmailAddressIndex].email}&verification_code=${verificationCode}`, {
+          // // Get the agreement content string and parse it as Markdown.
+          const agreementContentStringResponse = await fetch(`https://localhost:3001/agreements?agreement_path=${agreementPath}`, {
             headers: {
-              "Content-Type": "application/json",
-              "github-user-access-token": githubAccessToken
+              "Content-Type": "application/json"
             }
           });
 
           const agreementContentStringJSON = await agreementContentStringResponse.json();
+          
+          if (!agreementContentStringResponse.ok) throw new Error(agreementContentStringJSON.message);
+          
           setAgreementContent({
             text: agreementContentStringJSON.text,
             inputs: JSON.parse(agreementContentStringJSON.inputs),
@@ -303,9 +254,14 @@ export default function AgreementPage() {
           });
 
         } catch (error) {
+          
+          if (error instanceof Error) {
+
+            setError(error.message);
+
+          }
 
           console.error(error);
-          alert(error);
 
         }
 
@@ -313,87 +269,60 @@ export default function AgreementPage() {
 
     }
 
-  }, [isVerifyingCode, selectedEmailAddressIndex, emailAddresses, verificationCode]);
-
-  const [isSendingCode, setIsSendingCode] = useState<boolean>(false);
-  useEffect(() => {
-
-    // Verify that the user is signed in and redirect them if they are unauthenticated.
-    if (isSendingCode) {
-
-      (async () => {
-
-        try {
-
-          // Get the agreement content string and parse it as Markdown.
-          const agreementContentStringResponse = await fetch(`https://localhost:3001/authentication/verification-code?email_address=${emailAddresses[selectedEmailAddressIndex].email}`, {
-            headers: {
-              "Content-Type": "application/json"
-            },
-            method: "POST"
-          });
-
-          const agreementContentStringJSON = await agreementContentStringResponse.json();
-          setAgreementContent({
-            text: agreementContentStringJSON.text,
-            inputs: JSON.parse(agreementContentStringJSON.inputs),
-            permissions: JSON.parse(agreementContentStringJSON.permissions),
-            githubUserID: agreementContentStringJSON.githubUserID
-          });
-
-        } catch (error) {
-
-          console.error(error);
-          alert(error);
-
-        }
-
-      })();
-
-    }
-
-  }, [isSendingCode, selectedEmailAddressIndex, emailAddresses, verificationCode]);
+  }, []);
 
   return (
     <main id={styles.page}>
       {
         isReady ? (
-          <>
-            <AuthenticationSection />
-            {/* {markdownComponent}
-            <section>
-              <button disabled={isSubmitting || !canSubmit} onClick={() => canSubmit ? setIsGettingEmailAddresses(true) : undefined}>I have read, understand, and agree to this agreement</button>
-              <button className="secondary" disabled={isSubmitting}>Decline terms</button>
-            </section>
-            <form onSubmit={(event) => {
-              event.preventDefault();
-              setIsSubmitting(true);
-            }}>
-              <section>
-                <h2>Privacy disclosure</h2>
-                <p>One last thing — after you sign and submit this agreement, we will attach some of your account, network, and device information to your submission, including:</p>
-                <ul>
-                  <li>your IP address,</li>
-                  <li>your Internet service provider information,</li>
-                  <li>your user agent and browser information,</li>
-                  <li>your GitHub user ID,</li>
-                  <li>the ID of the user access token used to sign this agreement,</li>
-                  <li>the timestamp of your authorization for Agreement Center to use your GitHub account,</li>
-                  <li>the timestamp of you opening this agreement,</li>
-                  <li>the timestamp of you signing this agreement,</li>
-                  <li>and your email address.</li>
-                </ul>
-                <p>This information will be encrypted and only used for security and authentication purposes. Agreements, along with this information, are stored at Beastslash's discretion.</p>
-                <button type="submit" disabled={isSubmitting || !canSubmit}>Sign and submit</button>
-              </section>
-            </form>
+          isSubmitted ? (
             <section>
               <h1>You're all set</h1>
-              <p>You've signed the <b>Everyone Destroys the World constractor agreement</b>. We've sent a copy of the agreement to your email address, but you can also access the agreement here on the Agreement Center while you still have access to the app.</p>
-            </section> */}
-          </>
+              <p>You've signed the <b>Everyone Destroys the World contractor agreement</b>. We've sent a copy of the agreement to your email address for your reference, but you can also access the agreement here on the Agreement Center while you still have access to the app.</p>
+            </section>
+          ) : (
+            isSigned ? (
+              <form onSubmit={(event) => {
+                event.preventDefault();
+                setIsSubmitting(true);
+              }}>
+                <section>
+                  <h2>Privacy disclosure</h2>
+                  <p>One last thing: by submitting this agreement, you understand and agree that we will attach some of your account, network, and device information to your submission, including:</p>
+                  <ul>
+                    <li>your IP address,</li>
+                    <li>your Internet service provider information,</li>
+                    <li>your user agent and browser information,</li>
+                    <li>the timestamp of you opening this agreement,</li>
+                    <li>the timestamp of you signing this agreement,</li>
+                    <li>and your email address.</li>
+                  </ul>
+                  <p>This information will be encrypted and only used for security and authentication purposes. Agreements, along with this information, are stored at Beastslash's discretion.</p>
+                  <section>
+                    <button type="submit" disabled={!canSubmit || !isSigned} onClick={() => setIsSubmitting(true)}>Submit agreement</button>
+                    <button type="button" className="secondary">Review agreement again</button>
+                  </section>
+                </section>
+              </form>
+            ) : (
+              <>
+                {markdownComponent}
+                <section>
+                  <button disabled={!canSubmit} onClick={() => setIsSigned(true)}>I have read, understand, and agree to this agreement</button>
+                  <button className="secondary" disabled={isSubmitting}>Decline terms</button>
+                </section>
+              </>
+            )
+          )
         ) : (
-          <p>Getting agreement...</p>
+          error ? (
+            <section id={styles.error}>
+              <p>A problem happened when getting the agreement:</p>
+              <code>
+                {error}
+              </code>
+            </section>
+          ) : <p>Getting agreement...</p>
         )
       }
     </main>
