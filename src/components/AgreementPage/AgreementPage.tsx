@@ -191,7 +191,7 @@ export default function AgreementPage() {
 
           }
 
-          const signedCommitResponse = await fetch(`https://localhost:3001/agreements/inputs?agreement_path=${agreementPath}`, {
+          const signedCommitResponse = await fetch(`https://localhost:3001/agreements/${agreementPath}/inputs`, {
             headers: {
               "Content-Type": "application/json",
               "access-token": accessToken

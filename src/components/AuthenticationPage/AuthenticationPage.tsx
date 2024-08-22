@@ -10,13 +10,39 @@ export default function AuthenticationSection() {
   const [verificationCode, setVerificationCode] = useState<string>("");
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
 
+  const [verificationCodeRequestErrorMessage, setVerificationCodeRequestErrorMessage] = useState<string | undefined>(undefined);
   useEffect(() => {
 
     (async () => {
 
       if (shouldSendCode) {
 
-        setIsCodeInputAvailable(true);
+        try {
+
+          const response = await fetch("https://localhost:3001/authentication/verification-code", {
+            method: "POST",
+            headers: {
+              "email-address": emailAddress,
+              "content-type": "application/json"
+            }
+          });
+
+          const responseJSON = await response.json();
+
+          if (!response.ok) throw new Error(responseJSON.message);
+
+          setIsCodeInputAvailable(true);
+
+        } catch (error) {
+
+          if (error instanceof Error) {
+
+            setVerificationCodeRequestErrorMessage(error.message);
+
+          }
+          setShouldSendCode(false);
+
+        }
 
       }
 
@@ -35,19 +61,59 @@ export default function AuthenticationSection() {
 
       if (isVerifying) {
 
-        const accessTokenExpireTime = new Date();
-        accessTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + 60000);
-        // accessTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + jsonResponse.expires_in);
-        const refreshTokenExpireTime = new Date();
-        refreshTokenExpireTime.setSeconds(refreshTokenExpireTime.getSeconds() + 600000);
-        // refreshTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + jsonResponse.refresh_token_expires_in);
-        document.cookie = `accessToken=${"test"}; Expires=${accessTokenExpireTime.toUTCString()}; SameSite=Strict; Secure; Path=/`;
-        document.cookie = `refreshToken=${"test"}; Expires=${refreshTokenExpireTime.toUTCString()}; SameSite=Strict; Secure; Path=/`;
+        try {
 
-        const broadcastChannel = new BroadcastChannel("AccessTokenChange");
-        broadcastChannel.postMessage(true);
+          const response = await fetch("https://localhost:3001/authentication/access-token", {
+            method: "POST",
+            headers: {
+              "email-address": emailAddress,
+              "verification-code": verificationCode,
+              "content-type": "application/json"
+            }
+          });
 
-        navigate(redirectPath, {replace: true});
+          if (response.status === 201) {
+
+            const { accessToken } = await response.json();
+            const accessTokenExpireTime = new Date();
+            accessTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + 60000);
+
+            document.cookie = `accessToken=${accessToken}; Expires=${accessTokenExpireTime.toUTCString()}; SameSite=Strict; Secure; Path=/`;
+  
+            const broadcastChannel = new BroadcastChannel("AccessTokenChange");
+            broadcastChannel.postMessage(true);
+  
+            navigate(redirectPath, {replace: true});
+
+          } else if (response.status === 400) {
+
+            throw new Error("The code that you provided was incorrect.");
+
+          } else if (!response.ok) {
+
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+
+              const { message } = await response.json();
+              throw new Error(message);
+
+            }
+
+            throw new Error("An unknown error occurred. Try again later.");
+
+          }
+          
+
+        } catch (error) {
+
+          if (error instanceof Error) {
+
+            setHelperTextError(error.message);
+
+          }
+          setIsVerifying(false);
+
+        }
 
       }
 
@@ -62,7 +128,7 @@ export default function AuthenticationSection() {
         setIsVerifying(true);
       }}>
         <p>Please enter an authorized email address. After we authenticate you, you can see the agreements that you have signed, along with any outstanding requests for your signature.</p>
-        <Input type="email" required value={emailAddress} onChange={({target: {value}}) => setEmailAddress(value)} onKeyDown={(event) => {
+        <Input type="email" helperText={verificationCodeRequestErrorMessage} required value={emailAddress} onChange={({target: {value}}) => setEmailAddress(value)} onKeyDown={(event) => {
 
           if (event.key === "Enter") {
            

@@ -1,10 +1,47 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./AgreementListPage.module.css";
 import { useNavigate } from "react-router-dom";
 
 export default function AgreementListPage() {
 
   const navigate = useNavigate();
+  const [agreements, setAgreements] = useState<{
+    path: string;
+    name: string;
+    status: "Completed" | "Awaiting action from you" | "Awaiting action from others" | "Terminated" | "Partially terminated"
+  }[]>([]);
+
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; accessToken=`);
+  const accessToken = parts.length === 2 ? parts.pop()?.split(';').shift() ?? "" : "";
+
+  useEffect(() => {
+
+    (async () => {
+
+      if (!accessToken) navigate(`/authenticate?redirect-path=/agreements`, {replace: true});
+
+      const agreementsResponse = await fetch(`https://localhost:3001/agreements`, {
+        headers: {
+          "content-type": "application/json",
+          "access-token": accessToken
+        }
+      });
+
+      if (agreementsResponse.status === 200) {
+
+        const agreements = await agreementsResponse.json();
+        setAgreements(agreements);
+
+      } else if (agreementsResponse.status === 401) {
+
+        navigate(`/authenticate?redirect-path=/agreements`, {replace: true})
+
+      }
+
+    })();
+
+  }, []);
 
   return (
     <main>
@@ -13,16 +50,18 @@ export default function AgreementListPage() {
         <thead>
           <tr>
             <th align="left">Agreement name</th>
-            <th align="left">Administrator</th>
             <th align="left">Status</th>
           </tr>
         </thead>
         <tbody>
-          <tr className={styles.agreement} onClick={() => navigate("/agreements/everyone-destroys-the-world/inky-the-blue-")}>
-            <td>Everyone Destroys the World contractor agreement for InkyTheBlue</td>
-            <td>Christian Toney</td>
-            <td>Completed</td>
-          </tr>
+          {
+            agreements.map((agreement) => (
+              <tr key={agreement.path} className={styles.agreement} onClick={() => navigate(`/agreements/${agreement.path}`)}>
+                <td>{agreement.name}</td>
+                <td>{agreement.status}</td>
+              </tr>
+            ))
+          }
         </tbody>
       </table>
     </main>
