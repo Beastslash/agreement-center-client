@@ -19,23 +19,27 @@ export default function AgreementListPage() {
 
     (async () => {
 
-      if (!accessToken) navigate(`/authenticate?redirect-path=/agreements`, {replace: true});
+      if (!agreements[0]) {
 
-      const agreementsResponse = await fetch(`https://localhost:3001/agreements`, {
-        headers: {
-          "content-type": "application/json",
-          "access-token": accessToken
+        if (!accessToken) navigate(`/authenticate?redirect-path=/agreements`, {replace: true});
+
+        const agreementsResponse = await fetch(`https://localhost:3001/agreements`, {
+          headers: {
+            "content-type": "application/json",
+            "access-token": accessToken
+          }
+        });
+
+        if (agreementsResponse.status === 200) {
+
+          const agreements = await agreementsResponse.json();
+          setAgreements(agreements);
+
+        } else if (agreementsResponse.status === 401) {
+
+          navigate(`/authenticate?redirect-path=/agreements`, {replace: true})
+
         }
-      });
-
-      if (agreementsResponse.status === 200) {
-
-        const agreements = await agreementsResponse.json();
-        setAgreements(agreements);
-
-      } else if (agreementsResponse.status === 401) {
-
-        navigate(`/authenticate?redirect-path=/agreements`, {replace: true})
 
       }
 

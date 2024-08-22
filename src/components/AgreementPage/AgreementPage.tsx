@@ -21,11 +21,11 @@ export default function AgreementPage() {
     inputs: {
       type: InputType;
       label: string;
-      ownerID: number;
+      ownerID: string;
       isAutofilled?: boolean;
     }[];
-    githubUserID: number;
   } | null>(null);
+  const [emailAddress, setEmailAddress] = useState<string | null>(null);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [inputValues, setInputValues] = useState<any[]>([]);
   const [markdownComponent, setMarkdownComponent] = useState<ReactElement[] | null>(null);
@@ -97,7 +97,7 @@ export default function AgreementPage() {
           const inputIndex = parseInt(match.inputIndex, 10);
           const inputInfo = agreementContent.inputs[inputIndex];
 
-          const isOwner = inputInfo.ownerID === agreementContent.githubUserID;
+          const isOwner = inputInfo.ownerID === emailAddress;
           const isDate = inputInfo.type === 1;
           if (isDate && !inputValues[inputIndex] && isOwner) {
 
@@ -166,7 +166,7 @@ export default function AgreementPage() {
 
     }
 
-  }, [agreementContent, inputValues]);
+  }, [agreementContent, inputValues, emailAddress]);
 
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -236,9 +236,10 @@ export default function AgreementPage() {
         try {
 
           // // Get the agreement content string and parse it as Markdown.
-          const agreementContentStringResponse = await fetch(`https://localhost:3001/agreements?agreement_path=${agreementPath}`, {
+          const agreementContentStringResponse = await fetch(`https://localhost:3001/agreements/${agreementPath}`, {
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
+              "access-token": accessToken
             }
           });
 
@@ -260,11 +261,14 @@ export default function AgreementPage() {
             
           };
           
+          console.log(agreementContentStringResponse.headers)
+          const emailAddress = agreementContentStringResponse.headers.get("email-address");
+          setEmailAddress(emailAddress);
+
           setAgreementContent({
             text: agreementContentStringJSON.text,
-            inputs: JSON.parse(agreementContentStringJSON.inputs),
-            permissions: JSON.parse(agreementContentStringJSON.permissions),
-            githubUserID: agreementContentStringJSON.githubUserID
+            inputs: agreementContentStringJSON.inputs,
+            permissions: agreementContentStringJSON.permissions
           });
 
         } catch (error) {

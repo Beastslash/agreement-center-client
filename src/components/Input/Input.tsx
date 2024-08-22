@@ -11,7 +11,7 @@ function Input({children, type, helperText, ...props}: {children: string, helper
   const [isFocused, setIsFocused] = useState<boolean>(false);
 
   return (
-    <section className={`${styles.input}${props.disabled ? " disabled" : ""}${isFocused ? ` ${styles.focused}` : ""}`}>
+    <section className={`${styles.input}${props.disabled ? ` ${styles.disabled}` : ""}${isFocused ? ` ${styles.focused}` : ""}`}>
       <section>
         <section>
           <span className={styles.leftBorder} />
