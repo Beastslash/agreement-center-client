@@ -9,7 +9,7 @@ export default function ProgressHeader() {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const mode = searchParams.get("mode");
+  const status = searchParams.get("status");
 
   useEffect(() => {
 
@@ -25,11 +25,11 @@ export default function ProgressHeader() {
 
     } else if (/^\/agreements\/\S+\/\S+$/g.test(pathname)) {
 
-      setCurrentStep(mode === "submit" ? 3 : 2);
+      setCurrentStep(status === "submit" ? 3 : 2);
 
     }
 
-  }, [location, mode]);
+  }, [location, status]);
 
   useEffect(() => {
 

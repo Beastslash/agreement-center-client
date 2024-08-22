@@ -36,7 +36,7 @@ export default function AgreementPage() {
   const accessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
 
   const [searchParams] = useSearchParams();
-  const mode = searchParams.get("mode");
+  const status = searchParams.get("status");
 
   useEffect(() => {
 
@@ -102,7 +102,7 @@ export default function AgreementPage() {
 
           const isOwner = inputInfo.ownerID === emailAddress;
           const isDate = inputInfo.type === 1;
-          if (isDate && !inputValues[inputIndex] && isOwner && mode === "sign") {
+          if (isDate && !inputValues[inputIndex] && isOwner && status === "sign") {
 
             const date = new Date();
             const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -126,7 +126,7 @@ export default function AgreementPage() {
           }
 
           components.push(
-            <Input key={key} className={`input${isDisabled ? " disabled" : ""}`} type="text" disabled={mode !== "sign" || isDisabled} required={isOwner} value={inputValues[inputIndex] ?? ""} onChange={(event) => setInputValues((currentInputValues) => {
+            <Input key={key} className={`input${isDisabled ? " disabled" : ""}`} type="text" disabled={status !== "sign" || isDisabled} required={isOwner} value={inputValues[inputIndex] ?? ""} onChange={(event) => setInputValues((currentInputValues) => {
 
               const newInputValues = [...currentInputValues];
               newInputValues[inputIndex] = event.target.value;
@@ -169,11 +169,11 @@ export default function AgreementPage() {
 
     }
 
-  }, [agreementContent, inputValues, emailAddress, mode]);
+  }, [agreementContent, inputValues, emailAddress, status]);
 
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
+  
   useEffect(() => {
 
     if (isSubmitting && accessToken) {
@@ -193,7 +193,7 @@ export default function AgreementPage() {
 
           }
 
-          const signedCommitResponse = await fetch(`https://localhost:3001/agreements/${agreementPath}/inputs`, {
+          const signatureResponse = await fetch(`https://localhost:3001/agreements/${agreementPath}/sign`, {
             headers: {
               "Content-Type": "application/json",
               "access-token": accessToken
@@ -202,7 +202,11 @@ export default function AgreementPage() {
             method: "PUT"
           });
 
-          alert("Successfully accepted and submitted contract.");
+          const signatureResponseJSON = await signatureResponse.json();
+
+          if (!signatureResponse.ok) throw new Error(signatureResponseJSON.message);
+
+          navigate(`${location.pathname}?status=completed`, {replace: true});
 
         } catch (error) {
 
@@ -273,7 +277,7 @@ export default function AgreementPage() {
             permissions: agreementContentStringJSON.permissions
           });
 
-          navigate(`${location.pathname}?mode=sign`, {replace: true});
+          navigate(`${location.pathname}?status=sign`, {replace: true});
 
         } catch (error) {
           
@@ -297,13 +301,13 @@ export default function AgreementPage() {
 
   useEffect(() => {
 
-    if (mode === "submit" && !canSubmit) {
+    if (status === "submit" && !canSubmit) {
 
-      navigate(`${location.pathname}?mode=sign`, {replace: true});
+      navigate(`${location.pathname}?status=sign`, {replace: true});
 
     }
 
-  }, [mode, canSubmit]);
+  }, [status, canSubmit]);
 
   useEffect(() => {
 
@@ -315,13 +319,13 @@ export default function AgreementPage() {
     <main id={styles.page}>
       {
         isReady ? (
-          isSubmitted ? (
+          status === "completed" ? (
             <section>
               <h1>You're all set</h1>
               <p>You've signed the <b>Everyone Destroys the World contractor agreement</b>. We've sent a copy of the agreement to your email address for your reference, but you can also access the agreement here on the Agreement Center while you still have access to the app.</p>
             </section>
           ) : (
-            mode === "submit" ? (
+            status === "submit" ? (
               <form onSubmit={(event) => {
                 event.preventDefault();
                 setIsSubmitting(true);
@@ -339,8 +343,8 @@ export default function AgreementPage() {
                   </ul>
                   <p>This information will be encrypted and only used for security and authentication purposes. Agreements, along with this information, are stored at Beastslash's discretion.</p>
                   <section>
-                    <button type="submit" disabled={!canSubmit} onClick={() => setIsSubmitting(true)}>Submit agreement</button>
-                    <button type="button" className="secondary">Review agreement again</button>
+                    <button type="submit" disabled={!canSubmit || isSubmitting} onClick={() => setIsSubmitting(true)}>Submit agreement</button>
+                    <button type="button" className="secondary" onClick={() => navigate(`${location.pathname}?status=sign`)}>Review agreement again</button>
                   </section>
                 </section>
               </form>
@@ -348,7 +352,7 @@ export default function AgreementPage() {
               <>
                 {markdownComponent}
                 <section>
-                  <button disabled={!canSubmit} onClick={() => navigate(`${location.pathname}?mode=submit`)}>I have read, understand, and agree to this agreement</button>
+                  <button disabled={!canSubmit} onClick={() => navigate(`${location.pathname}?status=submit`)}>I have read, understand, and agree to this agreement</button>
                   <button className="secondary" disabled={isSubmitting}>Decline terms</button>
                 </section>
               </>
