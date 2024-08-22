@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactElement } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Katex from "katex";
 import Input from "../Input/Input";
 import styles from "./AgreementPage.module.css"
@@ -323,67 +323,69 @@ export default function AgreementPage() {
 
   useEffect(() => {
 
-    setShouldGetAgreementContent(true);
+    setShouldGetAgreementContent(!status || status === "sign");
 
-  }, [])
+  }, [status])
 
   return (
     <main id={styles.page}>
-      {
-        isReady ? (
-          status === "completed" ? (
-            <section>
-              <h1>You're all set</h1>
-              <p>You've signed the <b>Everyone Destroys the World contractor agreement</b>. We've sent a copy of the agreement to your email address for your reference, but you can also access the agreement here on the Agreement Center while you still have access to the app.</p>
-            </section>
-          ) : (
-            status === "submit" ? (
-              <form onSubmit={(event) => {
-                event.preventDefault();
-                setIsSubmitting(true);
-              }}>
-                <section>
-                  <h2>Privacy disclosure</h2>
-                  <p>One last thing: by submitting this agreement, you understand and agree that we will attach some of your account, network, and device information to your submission, including:</p>
-                  <ul>
-                    <li>your IP address,</li>
-                    <li>your user agent and browser information,</li>
-                    <li>the timestamp of you opening this agreement,</li>
-                    <li>the timestamp of you signing this agreement,</li>
-                    <li>and your email address.</li>
-                  </ul>
-                  <p>This information will be encrypted and only used for security and authentication purposes. Agreements, along with this information, are stored at Beastslash's discretion.</p>
-                  <section>
-                    <button type="submit" disabled={!canSubmit || isSubmitting} onClick={() => setIsSubmitting(true)}>Submit agreement</button>
-                    <button type="button" className="secondary" onClick={() => navigate(`${location.pathname}?status=sign`)}>Review agreement again</button>
-                  </section>
-                </section>
-              </form>
+      <section id="content">
+        {
+          isReady ? (
+            status === "completed" ? (
+              <section>
+                <h1>You're all set</h1>
+                <p>You've signed <b>{location.pathname.slice(location.pathname.lastIndexOf("/") + 1)}</b>. We've sent a copy of the agreement to your email address for your reference, but you can also <Link to={location.pathname} onClick={() => setIsReady(false)}>access the agreement here on the Agreement Center</Link> while you still have access to the app.</p>
+              </section>
             ) : (
-              <>
-                {markdownComponent}
-                {
-                  status === "sign" ? (
+              status === "submit" ? (
+                <form onSubmit={(event) => {
+                  event.preventDefault();
+                  setIsSubmitting(true);
+                }}>
+                  <section>
+                    <h2>Privacy disclosure</h2>
+                    <p>One last thing: by submitting this agreement, you understand and agree that we will attach some of your account, network, and device information to your submission, including:</p>
+                    <ul>
+                      <li>your IP address,</li>
+                      <li>your user agent and browser information,</li>
+                      <li>the timestamp of you opening this agreement,</li>
+                      <li>the timestamp of you signing this agreement,</li>
+                      <li>and your email address.</li>
+                    </ul>
+                    <p>This information will be encrypted and only used for security and authentication purposes. Agreements, along with this information, are stored at Beastslash's discretion.</p>
                     <section>
-                      <button disabled={!canSubmit} onClick={() => navigate(`${location.pathname}?status=submit`)}>I have read, understand, and agree to this agreement</button>
-                      <button className="secondary" disabled={isSubmitting}>Decline terms</button>
+                      <button type="submit" disabled={!canSubmit || isSubmitting} onClick={() => setIsSubmitting(true)}>Submit agreement</button>
+                      <button type="button" className="secondary" onClick={() => navigate(`${location.pathname}?status=sign`)}>Review agreement again</button>
                     </section>
-                  ) : null
-                }
-              </>
+                  </section>
+                </form>
+              ) : (
+                <>
+                  {markdownComponent}
+                  {
+                    status === "sign" ? (
+                      <section>
+                        <button disabled={!canSubmit} onClick={() => navigate(`${location.pathname}?status=submit`)}>I have read, understand, and agree to this agreement</button>
+                        <button className="secondary" disabled={isSubmitting}>Decline terms</button>
+                      </section>
+                    ) : null
+                  }
+                </>
+              )
             )
+          ) : (
+            error ? (
+              <section id={styles.error}>
+                <p>A problem happened when getting the agreement:</p>
+                <code>
+                  {error}
+                </code>
+              </section>
+            ) : <p>Getting agreement...</p>
           )
-        ) : (
-          error ? (
-            <section id={styles.error}>
-              <p>A problem happened when getting the agreement:</p>
-              <code>
-                {error}
-              </code>
-            </section>
-          ) : <p>Getting agreement...</p>
-        )
-      }
+        }
+      </section>
     </main>
   );
 

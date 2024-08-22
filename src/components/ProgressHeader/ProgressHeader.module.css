@@ -41,3 +41,11 @@
   background-color: rgb(147, 219, 86);
   color: rgb(60, 76, 46);
 }
+
+@media print {
+  
+  #progressHeader {
+    display: none;
+  }
+
+}

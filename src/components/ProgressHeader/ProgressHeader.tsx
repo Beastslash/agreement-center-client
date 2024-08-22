@@ -15,11 +15,11 @@ export default function ProgressHeader() {
 
     const { pathname } = location;
 
-    if (/^\/authenticate$/g.test(pathname)) {
+    if (/^\/authenticate\/?$/g.test(pathname)) {
 
       setCurrentStep(0);
 
-    } else if (/^\/agreements$/g.test(pathname)) {
+    } else if (/^\/agreements\/?$/g.test(pathname)) {
 
       setCurrentStep(1);
 

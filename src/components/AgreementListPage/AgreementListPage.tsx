@@ -49,25 +49,27 @@ export default function AgreementListPage() {
 
   return (
     <main>
-      <p>Here are all of the agreements that you have been requested to sign. If you're expecting to see an agreement here but it isn't here, contact the producer.</p>
-      <table cellPadding={0} cellSpacing={0}>
-        <thead>
-          <tr>
-            <th align="left">Agreement name</th>
-            <th align="left">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {
-            agreements.map((agreement) => (
-              <tr key={agreement.path} className={styles.agreement} onClick={() => navigate(`/agreements/${agreement.path}${agreement.status === "Awaiting action from you" ? "?status=sign" : ""}`)}>
-                <td>{agreement.name}</td>
-                <td>{agreement.status}</td>
-              </tr>
-            ))
-          }
-        </tbody>
-      </table>
+      <section id="content">
+        <p>Here are all of the agreements that you have been requested to sign. If you're expecting to see an agreement here but it isn't here, contact the producer.</p>
+        <table cellPadding={0} cellSpacing={0}>
+          <thead>
+            <tr>
+              <th align="left">Agreement name</th>
+              <th align="left">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              agreements.map((agreement) => (
+                <tr key={agreement.path} className={styles.agreement} onClick={() => navigate(`/agreements/${agreement.path}${agreement.status === "Awaiting action from you" ? "?status=sign" : ""}`)}>
+                  <td>{agreement.name}</td>
+                  <td>{agreement.status}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </section>
     </main>
   );
 
