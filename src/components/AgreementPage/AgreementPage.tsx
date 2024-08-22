@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactElement } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Katex from "katex";
 import Input from "../Input/Input";
 import styles from "./AgreementPage.module.css"
@@ -34,6 +34,9 @@ export default function AgreementPage() {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; accessToken=`);
   const accessToken = parts.length === 2 ? parts.pop()?.split(';').shift() : undefined;
+
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get("mode");
 
   useEffect(() => {
 
@@ -99,7 +102,7 @@ export default function AgreementPage() {
 
           const isOwner = inputInfo.ownerID === emailAddress;
           const isDate = inputInfo.type === 1;
-          if (isDate && !inputValues[inputIndex] && isOwner) {
+          if (isDate && !inputValues[inputIndex] && isOwner && mode === "sign") {
 
             const date = new Date();
             const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -123,7 +126,7 @@ export default function AgreementPage() {
           }
 
           components.push(
-            <Input key={key} className={`input${isDisabled ? " disabled" : ""}`} type="text" disabled={isDisabled} required={isOwner} value={inputValues[inputIndex] ?? ""} onChange={(event) => setInputValues((currentInputValues) => {
+            <Input key={key} className={`input${isDisabled ? " disabled" : ""}`} type="text" disabled={mode !== "sign" || isDisabled} required={isOwner} value={inputValues[inputIndex] ?? ""} onChange={(event) => setInputValues((currentInputValues) => {
 
               const newInputValues = [...currentInputValues];
               newInputValues[inputIndex] = event.target.value;
@@ -166,11 +169,10 @@ export default function AgreementPage() {
 
     }
 
-  }, [agreementContent, inputValues, emailAddress]);
+  }, [agreementContent, inputValues, emailAddress, mode]);
 
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isSigned, setIsSigned] = useState<boolean>(false);
 
   useEffect(() => {
 
@@ -271,6 +273,8 @@ export default function AgreementPage() {
             permissions: agreementContentStringJSON.permissions
           });
 
+          navigate(`${location.pathname}?mode=sign`, {replace: true});
+
         } catch (error) {
           
           if (error instanceof Error) {
@@ -293,6 +297,16 @@ export default function AgreementPage() {
 
   useEffect(() => {
 
+    if (mode === "submit" && !canSubmit) {
+
+      navigate(`${location.pathname}?mode=sign`, {replace: true});
+
+    }
+
+  }, [mode, canSubmit]);
+
+  useEffect(() => {
+
     setShouldGetAgreementContent(true);
 
   }, [])
@@ -307,7 +321,7 @@ export default function AgreementPage() {
               <p>You've signed the <b>Everyone Destroys the World contractor agreement</b>. We've sent a copy of the agreement to your email address for your reference, but you can also access the agreement here on the Agreement Center while you still have access to the app.</p>
             </section>
           ) : (
-            isSigned ? (
+            mode === "submit" ? (
               <form onSubmit={(event) => {
                 event.preventDefault();
                 setIsSubmitting(true);
@@ -325,7 +339,7 @@ export default function AgreementPage() {
                   </ul>
                   <p>This information will be encrypted and only used for security and authentication purposes. Agreements, along with this information, are stored at Beastslash's discretion.</p>
                   <section>
-                    <button type="submit" disabled={!canSubmit || !isSigned} onClick={() => setIsSubmitting(true)}>Submit agreement</button>
+                    <button type="submit" disabled={!canSubmit} onClick={() => setIsSubmitting(true)}>Submit agreement</button>
                     <button type="button" className="secondary">Review agreement again</button>
                   </section>
                 </section>
@@ -334,7 +348,7 @@ export default function AgreementPage() {
               <>
                 {markdownComponent}
                 <section>
-                  <button disabled={!canSubmit} onClick={() => setIsSigned(true)}>I have read, understand, and agree to this agreement</button>
+                  <button disabled={!canSubmit} onClick={() => navigate(`${location.pathname}?mode=submit`)}>I have read, understand, and agree to this agreement</button>
                   <button className="secondary" disabled={isSubmitting}>Decline terms</button>
                 </section>
               </>
