@@ -1,5 +1,8 @@
 :root {
   --color-text: black;
+  --color-border: #e0e0e0;
+  --color-border-input: #cdcdcd;
+  --color-link: #4b53ca;
 }
 
 body {
@@ -7,7 +10,7 @@ body {
   font-size: 14px;
 }
 
-h1, h2, h3, h4, tr, label, input, button, p, a {
+h1, h2, h3, h4, tr, label, input, button, p, a, li, section {
   font-family: "Onest", Arial, Helvetica, sans-serif;
 }
 
@@ -20,7 +23,7 @@ p, label, td, th {
 }
 
 table {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--color-border);
   border-radius: 5px;
   padding: 0;
 }
@@ -42,30 +45,6 @@ h1 {
   padding: 90px 0 75px;
 }
 
-.input {
-  display: flex;
-  flex-direction: column;
-}
-
-.input.disabled {
-  color: #878787;
-}
-
-.input label {
-  margin-left: 5px;
-  background: white;
-  z-index: 2;
-  width: fit-content;
-  padding: 0px 5px;
-  font-weight: 500;
-}
-
-.input input {
-  border-radius: 5px;
-  border: 1px solid #c4c4c4;
-  padding: 10px 10px;
-  margin-top: -10px;
-}
 
 main {
   display: flex;
@@ -73,11 +52,11 @@ main {
   gap: 15px;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 0 15px; 
+  padding: 15px; 
 }
 
-button {
-  background-color: #4b53ca;
+button, input[type="submit"], input[type="button"] {
+  background-color: var(--color-link);
   padding: 8px 15px;
   border-radius: 5px;
   border: 0px;
@@ -86,11 +65,21 @@ button {
   cursor: pointer;
 }
 
-button[disabled] {
+input[type="text"][disabled], textarea[disabled] {
+  cursor: text;
+}
+
+button[disabled], input[type="submit"][disabled], input[type="button"][disabled] {
   filter: grayscale(1) opacity(0.6);
 }
 
 button.secondary {
   color: var(--color-text);
   background-color: transparent;
+}
+
+main > form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
