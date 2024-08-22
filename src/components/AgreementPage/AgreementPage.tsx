@@ -23,6 +23,7 @@ export default function AgreementPage() {
       label: string;
       ownerID: string;
       isAutofilled?: boolean;
+      value: any;
     }[];
   } | null>(null);
   const [emailAddress, setEmailAddress] = useState<string | null>(null);
@@ -99,10 +100,20 @@ export default function AgreementPage() {
 
           const inputIndex = parseInt(match.inputIndex, 10);
           const inputInfo = agreementContent.inputs[inputIndex];
-
           const isOwner = inputInfo.ownerID === emailAddress;
           const isDate = inputInfo.type === 1;
-          if (isDate && !inputValues[inputIndex] && isOwner && status === "sign") {
+          const inputValue = inputInfo.value;
+          if (inputValue) {
+
+            setInputValues((currentInputValues) => {
+
+              const newInputValues = [...currentInputValues];
+              newInputValues[inputIndex] = inputValue;
+              return newInputValues;
+
+            });
+          
+          } else if (isDate && !inputValues[inputIndex] && inputInfo.isAutofilled && isOwner && status === "sign") {
 
             const date = new Date();
             const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -171,7 +182,6 @@ export default function AgreementPage() {
 
   }, [agreementContent, inputValues, emailAddress, status]);
 
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   
   useEffect(() => {
@@ -235,14 +245,18 @@ export default function AgreementPage() {
 
     }
 
-    if (shouldGetAgreementContent && !agreementContent) {
+    if (status === "completed") {
+
+      setIsReady(true);
+      
+    } else if (shouldGetAgreementContent && !agreementContent) {
 
       (async () => {
 
         try {
 
-          // // Get the agreement content string and parse it as Markdown.
-          const agreementContentStringResponse = await fetch(`https://localhost:3001/agreements/${agreementPath}?mode=sign`, {
+          // Get the agreement content string and parse it as Markdown.
+          const agreementContentStringResponse = await fetch(`https://localhost:3001/agreements/${agreementPath}${status === "sign" ? "?mode=sign" : ""}`, {
             headers: {
               "Content-Type": "application/json",
               "access-token": accessToken
@@ -259,7 +273,7 @@ export default function AgreementPage() {
 
             } else if (agreementContentStringResponse.status === 401) {
 
-              navigate(`/authenticate?redirect-path=/agreements/${agreementPath}`)
+              navigate(`/authenticate?redirect-path=/agreements/${agreementPath}${status === "sign" ? "?status=sign" : ""}`)
               
             }
 
@@ -276,8 +290,6 @@ export default function AgreementPage() {
             inputs: agreementContentStringJSON.inputs,
             permissions: agreementContentStringJSON.permissions
           });
-
-          navigate(`${location.pathname}?status=sign`, {replace: true});
 
         } catch (error) {
           
@@ -335,7 +347,6 @@ export default function AgreementPage() {
                   <p>One last thing: by submitting this agreement, you understand and agree that we will attach some of your account, network, and device information to your submission, including:</p>
                   <ul>
                     <li>your IP address,</li>
-                    <li>your Internet service provider information,</li>
                     <li>your user agent and browser information,</li>
                     <li>the timestamp of you opening this agreement,</li>
                     <li>the timestamp of you signing this agreement,</li>
@@ -351,10 +362,14 @@ export default function AgreementPage() {
             ) : (
               <>
                 {markdownComponent}
-                <section>
-                  <button disabled={!canSubmit} onClick={() => navigate(`${location.pathname}?status=submit`)}>I have read, understand, and agree to this agreement</button>
-                  <button className="secondary" disabled={isSubmitting}>Decline terms</button>
-                </section>
+                {
+                  status === "sign" ? (
+                    <section>
+                      <button disabled={!canSubmit} onClick={() => navigate(`${location.pathname}?status=submit`)}>I have read, understand, and agree to this agreement</button>
+                      <button className="secondary" disabled={isSubmitting}>Decline terms</button>
+                    </section>
+                  ) : null
+                }
               </>
             )
           )

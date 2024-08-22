@@ -14,7 +14,7 @@ export default function ProgressHeader() {
   useEffect(() => {
 
     const { pathname } = location;
-    console.log(pathname)
+
     if (/^\/authenticate$/g.test(pathname)) {
 
       setCurrentStep(0);
@@ -25,7 +25,7 @@ export default function ProgressHeader() {
 
     } else if (/^\/agreements\/\S+\/\S+$/g.test(pathname)) {
 
-      setCurrentStep(status === "submit" ? 3 : 2);
+      setCurrentStep(status ? {submit: 3, submitted: 4, sign: 2}[status] ?? 4 : 4);
 
     }
 
@@ -36,9 +36,13 @@ export default function ProgressHeader() {
     const newStepComponents = [];
     for (let i = 0; steps.length > i; i++) {
 
+      const isStepComplete = currentStep > i;
+
       newStepComponents[i] = (
-        <li key={i} className={`${styles.item} ${currentStep === i ? styles.selected : ""}`}>
-          <span className={styles.numberCircle}>{i + 1}</span>
+        <li key={i} className={`${styles.item}${currentStep === i ? ` ${styles.selected}` : ""}${isStepComplete ? ` ${styles.completed}` : ""}`}>
+          <span className={`${styles.numberCircle}${isStepComplete ? " material-symbols-outlined" : ""}`}>
+            {isStepComplete ? "check" : i + 1}
+          </span>
           <label>{steps[i]}</label>
         </li>
       )

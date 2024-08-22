@@ -60,7 +60,7 @@ export default function AgreementListPage() {
         <tbody>
           {
             agreements.map((agreement) => (
-              <tr key={agreement.path} className={styles.agreement} onClick={() => navigate(`/agreements/${agreement.path}`)}>
+              <tr key={agreement.path} className={styles.agreement} onClick={() => navigate(`/agreements/${agreement.path}${agreement.status === "Awaiting action from you" ? "?status=sign" : ""}`)}>
                 <td>{agreement.name}</td>
                 <td>{agreement.status}</td>
               </tr>
