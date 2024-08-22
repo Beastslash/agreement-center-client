@@ -218,7 +218,7 @@ export default function AgreementPage() {
   }, [isSubmitting]);
 
   const [error, setError] = useState<string | null>(null);
-
+  const [shouldGetAgreementContent, setShouldGetAgreementContent] = useState<boolean>(false);
   useEffect(() => {
 
     // Verify that the user is signed in and redirect them if they are unauthenticated.
@@ -229,14 +229,14 @@ export default function AgreementPage() {
 
     }
 
-    if (!agreementContent) {
+    if (shouldGetAgreementContent && !agreementContent) {
 
       (async () => {
 
         try {
 
           // // Get the agreement content string and parse it as Markdown.
-          const agreementContentStringResponse = await fetch(`https://localhost:3001/agreements/${agreementPath}`, {
+          const agreementContentStringResponse = await fetch(`https://localhost:3001/agreements/${agreementPath}?mode=sign`, {
             headers: {
               "Content-Type": "application/json",
               "access-token": accessToken
@@ -283,11 +283,19 @@ export default function AgreementPage() {
 
         }
 
+        setShouldGetAgreementContent(false);
+
       })();
 
     }
 
-  }, []);
+  }, [shouldGetAgreementContent]);
+
+  useEffect(() => {
+
+    setShouldGetAgreementContent(true);
+
+  }, [])
 
   return (
     <main id={styles.page}>
