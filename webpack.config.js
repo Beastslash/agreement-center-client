@@ -2,11 +2,12 @@ import { resolve, dirname } from "path";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import { fileURLToPath } from "url";
 import { createRequire } from "module";
+import webpack from "webpack";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
-const dotenv = require("dotenv-webpack");
+require("dotenv").config({path: `${process.env.NODE_ENV === "production" ? "production" : "development"}.env`});
 const config = {
   mode: "development",
   resolve: {
@@ -89,8 +90,8 @@ const config = {
       template: "public/index.html",
       // favicon: "public/favicon.png"
     }),
-    new dotenv({
-      path: `.env.${process.env.NODE_ENV === "production" ? "production" : "development"}`
+    new webpack.DefinePlugin({
+      "process.env": JSON.stringify(process.env)
     })
   ]
 };

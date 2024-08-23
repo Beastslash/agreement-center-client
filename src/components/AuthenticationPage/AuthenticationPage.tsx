@@ -78,7 +78,7 @@ export default function AuthenticationSection() {
             const accessTokenExpireTime = new Date();
             accessTokenExpireTime.setSeconds(accessTokenExpireTime.getSeconds() + 60000);
 
-            document.cookie = `accessToken=${accessToken}; Expires=${accessTokenExpireTime.toUTCString()}; SameSite=Strict; Secure; Path=/`;
+            document.cookie = `accessToken=${accessToken}; SameSite=Strict; Secure; Path=/`;
   
             const broadcastChannel = new BroadcastChannel("AccessTokenChange");
             broadcastChannel.postMessage(true);
