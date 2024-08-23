@@ -23,7 +23,7 @@ export default function AgreementListPage() {
 
         if (!accessToken) navigate(`/authenticate?redirect-path=/agreements`, {replace: true});
 
-        const agreementsResponse = await fetch(`https://localhost:3001/agreements`, {
+        const agreementsResponse = await fetch(`${process.env.REACT_APP_AGREEMENT_CENTER_API}/agreements`, {
           headers: {
             "content-type": "application/json",
             "access-token": accessToken

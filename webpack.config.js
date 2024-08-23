@@ -6,6 +6,7 @@ import { createRequire } from "module";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
+const dotenv = require("dotenv-webpack");
 const config = {
   mode: "development",
   resolve: {
@@ -87,6 +88,9 @@ const config = {
     new HtmlWebpackPlugin({
       template: "public/index.html",
       // favicon: "public/favicon.png"
+    }),
+    new dotenv({
+      path: `.env.${process.env.NODE_ENV === "production" ? "production" : "development"}`
     })
   ]
 };

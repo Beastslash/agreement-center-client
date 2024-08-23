@@ -106,12 +106,6 @@ button.secondary {
   background-color: transparent;
 }
 
-main > form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
 @media print {
   html, body, #root, main, #content {
     height: fit-content;
