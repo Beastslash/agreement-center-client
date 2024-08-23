@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 require("dotenv").config({path: `${process.argv[process.argv.indexOf("--mode") + 1] === "production" ? "production" : "development"}.env`});
-console.log(`${process.argv[process.argv.indexOf("--mode") + 1] === "production" ? "production" : "development"}.env`);
+
 const config = {
   mode: "development",
   resolve: {
