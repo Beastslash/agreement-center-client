@@ -30,6 +30,7 @@ export default function AgreementPage() {
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
   const [inputValues, setInputValues] = useState<any[]>([]);
   const [markdownComponent, setMarkdownComponent] = useState<ReactElement[] | null>(null);
+  const [ownedInputIndices, setOwnedInputIndices] = useState<number[]>([]);
 
   const agreementPath = `${projectName}/${agreementName}`;
   const value = `; ${document.cookie}`;
@@ -50,6 +51,7 @@ export default function AgreementPage() {
       let tableRows: ReactElement[] = [];
       let alignment: "left" | "right" | "center" | undefined = undefined;
       let canSubmit = true;
+      const ownedInputIndices = [];
       for (const {groups: match} of [...agreementContent.text.matchAll(regex)]) {
 
         if (!match) continue;
@@ -130,9 +132,15 @@ export default function AgreementPage() {
 
           const isDisabled = isDate || !isOwner;
 
-          if (isOwner && !inputValues[inputIndex]) {
+          if (isOwner) {
 
-            canSubmit = false;
+            ownedInputIndices.push(inputIndex);
+
+            if (!inputValues[inputIndex]) {
+
+              canSubmit = false;
+
+            }
 
           }
 
@@ -176,6 +184,7 @@ export default function AgreementPage() {
 
       setCanSubmit(canSubmit);
       setMarkdownComponent(components);
+      setOwnedInputIndices(ownedInputIndices);
       setIsReady(true);
 
     }
@@ -192,10 +201,11 @@ export default function AgreementPage() {
 
         try {
 
+          // Only include owned values to avoid server permission errors.
           const ownedPairs: any = {};
           for (let i = 0; inputValues.length > i; i++) {
 
-            if (inputValues[i]) {
+            if (ownedInputIndices.includes(i)) {
 
               ownedPairs[i] = inputValues[i];
 
@@ -203,6 +213,7 @@ export default function AgreementPage() {
 
           }
 
+          // Sign the document then show the response.
           const signatureResponse = await fetch(`${process.env.REACT_APP_AGREEMENT_CENTER_API}/agreements/${agreementPath}/sign`, {
             headers: {
               "Content-Type": "application/json",
