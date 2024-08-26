@@ -359,12 +359,11 @@ export default function AgreementPage() {
                     <p>One last thing: by submitting this agreement, you understand and agree that some of your account, network, and device information may be attached to your submission, including:</p>
                     <ul>
                       <li>your IP address,</li>
-                      <li>your user agent and browser information,</li>
                       <li>the timestamp of you opening this agreement,</li>
                       <li>the timestamp of you signing this agreement,</li>
                       <li>and your email address.</li>
                     </ul>
-                    <p>This information will only used for security and authentication purposes. Agreements, along with this information, are stored at Beastslash's discretion.</p>
+                    <p>This information will only be collected once and it can only be used for security and authentication purposes. Agreements, along with this information, are stored at Beastslash's discretion.</p>
                     <section>
                       <button type="submit" disabled={!canSubmit || isSubmitting} onClick={() => setIsSubmitting(true)}>Submit agreement</button>
                       <button type="button" className="secondary" onClick={() => navigate(`${location.pathname}?status=sign`)}>Review agreement again</button>
